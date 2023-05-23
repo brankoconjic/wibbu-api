@@ -1,7 +1,6 @@
 /**
  * External dependencies.
  */
-import dotenv from 'dotenv';
 import Fastify from 'fastify';
 
 /**
@@ -10,9 +9,6 @@ import Fastify from 'fastify';
 import { PORT, API_PREFIX } from './config/environment';
 import userRoutes from './modules/user/user.routes';
 import { userSchemas } from './modules/user/user.schema';
-
-// Load environment variables from .env file.
-dotenv.config();
 
 const server = Fastify({
 	logger: true,

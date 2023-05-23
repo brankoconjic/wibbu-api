@@ -6,7 +6,6 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 /**
  * Internal dependencies.
  */
-import { Prisma } from '@prisma/client';
 import { CreateUserInput, CreateUserResponse } from './user.schema';
 import { createUserService } from './user.service';
 import { handleError } from '@/utils/handleErrors';
