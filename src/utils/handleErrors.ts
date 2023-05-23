@@ -1,15 +1,15 @@
-import { CreateUserResponse, ErrorResponseType } from '@/modules/user/user.schema';
+import { ErrorResponseType } from '@/modules/user/user.schema';
 import { Prisma } from '@prisma/client';
 
 const GENERIC_ERROR_MESSAGE = 'An error occurred.' as const;
 
-type ErrorType = {
+type ReturnErrorType = {
 	status: number;
 	error: ErrorResponseType;
 };
 
 export const handleError = (err: any) => {
-	let errObj: ErrorType = {
+	let errObj: ReturnErrorType = {
 		status: 500,
 		error: {
 			message: GENERIC_ERROR_MESSAGE,
