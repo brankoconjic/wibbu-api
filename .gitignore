@@ -1,0 +1,44 @@
+# Node modules
+node_modules/
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# dotenv environment variables file
+.env
+
+# TypeScript
+*.tsbuildinfo
+
+# Build output
+dist/
+
+# Debug
+.nyc_output
+coverage
+
+# IDE / Editors
+.vscode
+.idea
+*.swp
+*.swo
+*.swn
+*.bak
+*.orig
+
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Prisma
+.prisma/client
+
+# Todo
+TODO.md
