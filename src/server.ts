@@ -6,10 +6,10 @@ import Fastify from 'fastify';
 /**
  * Internal dependencies.
  */
-import { API_PREFIX, PORT } from './config/environment';
-import userRoutes from './modules/user/user.routes';
-import { userSchemas } from './modules/user/user.schema';
-import { handleError } from './utils/handleErrors';
+import { API_PREFIX, PORT } from '@/config/environment';
+import userRoutes from '@/modules/user/user.routes';
+import { userSchemas } from '@/modules/user/user.schema';
+import { handleError } from '@/utils/handleErrors';
 
 const logger =
 	process.env.NODE_ENV === 'development'

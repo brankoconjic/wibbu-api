@@ -1,6 +1,6 @@
 import { ErrorResponseType } from '@/modules/user/user.schema';
 import { Prisma } from '@prisma/client';
-import { FastifyReply, FastifyRequest } from 'fastify';
+import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 
 const GENERIC_ERROR_MESSAGE = 'An error occurred.' as const;
 
@@ -9,7 +9,7 @@ type ReturnErrorType = {
 	error: ErrorResponseType;
 };
 
-export const handleError = (error: any, request: FastifyRequest, reply: FastifyReply) => {
+export const handleError = (error: Prisma.PrismaClientKnownRequestError | FastifyError | Error, request: FastifyRequest, reply: FastifyReply) => {
 	let errObj: ReturnErrorType = {
 		status: 500,
 		error: {
@@ -30,11 +30,13 @@ export const handleError = (error: any, request: FastifyRequest, reply: FastifyR
 	}
 
 	// Handle other errors
-	if (error instanceof Error) {
-		errObj.status = 500;
+	const fastifyError = error as FastifyError;
+	if ((error as FastifyError) instanceof Error) {
+		errObj.status = fastifyError?.statusCode ? fastifyError.statusCode : 500;
+
 		errObj.error = {
-			message: process.env.NODE_ENV === 'development' ? error.message : GENERIC_ERROR_MESSAGE,
-			code: 'INTERNAL_SERVER_ERROR',
+			message: process.env.NODE_ENV === 'development' ? fastifyError.message : GENERIC_ERROR_MESSAGE,
+			code: process.env.NODE_ENV === 'development' ? fastifyError.code : 'INTERNAL_SERVER_ERROR',
 		};
 
 		return reply.status(errObj.status).send(errObj);
