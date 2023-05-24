@@ -12,11 +12,26 @@ const authRoutes = async (server: FastifyInstance) => {
 			schema: {
 				body: $ref('loginRequestSchema'),
 				response: {
-					201: $ref('loginResponseSchema'),
+					200: $ref('loginResponseSchema'),
 				},
 			},
 		},
 		loginController
+	);
+
+	server.get(
+		'/protected',
+		{
+			onRequest: [server.authenticate],
+		},
+
+		// Temporary solution to get user data!
+		async (request: any, reply: any) => {
+			return {
+				message: 'You are in a protected route',
+				user: request.user,
+			};
+		}
 	);
 };
 
