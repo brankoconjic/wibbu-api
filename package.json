@@ -4,7 +4,9 @@
 	"description": "",
 	"main": "index.js",
 	"scripts": {
-		"dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/server.ts"
+		"start": "npm run build && node -r tsconfig-paths/register dist/server.js",
+		"build": "rimraf dist && tsc",
+		"dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/*.ts"
 	},
 	"keywords": [],
 	"author": "",
@@ -12,6 +14,8 @@
 	"devDependencies": {
 		"@types/bcrypt": "^5.0.0",
 		"@types/node": "^20.1.7",
+		"pino-pretty": "^10.0.0",
+		"rimraf": "^5.0.1",
 		"ts-node-dev": "^2.0.0",
 		"tsconfig-paths": "^4.2.0",
 		"typescript": "^5.0.4"
