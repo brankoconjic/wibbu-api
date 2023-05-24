@@ -1,11 +1,10 @@
+import { $ref } from '@/utils/buildSchemas';
 import { FastifyInstance } from 'fastify';
 import { createUserController } from './user.controller';
-import { $ref } from './user.schema';
 
 const userRoutes = async (server: FastifyInstance) => {
 	/**
 	 * @route POST / - Create a new user.
-	 * @body {CreateUserInput} - User input.
 	 */
 	server.post(
 		'/',

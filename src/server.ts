@@ -1,15 +1,17 @@
 /**
  * External dependencies.
  */
-import Fastify from 'fastify';
+import jwt from '@fastify/jwt';
+import Fastify, { FastifyReply, FastifyRequest } from 'fastify';
 
 /**
  * Internal dependencies.
  */
-import { API_PREFIX, PORT } from '@/config/environment';
+import { API_PREFIX, JWT_SECRET, PORT } from '@/config/environment';
+import authRoutes from '@/modules/auth/auth.routes';
 import userRoutes from '@/modules/user/user.routes';
-import { userSchemas } from '@/modules/user/user.schema';
 import { handleError } from '@/utils/handleErrors';
+import { schemas } from './utils/buildSchemas';
 
 const logger =
 	process.env.NODE_ENV === 'development'
@@ -20,7 +22,7 @@ const logger =
 		  }
 		: false;
 
-const server = Fastify({ logger: logger });
+export const server = Fastify({ logger: logger });
 
 // Handle SIGTERM signal
 process.on('SIGTERM', async () => {
@@ -35,18 +37,33 @@ process.on('SIGTERM', async () => {
 });
 
 const start = async () => {
-	// Register schemas.
-	for (const schema of userSchemas) {
-		server.addSchema(schema);
-	}
-
-	// Register custom error handler.
-	server.setErrorHandler(handleError);
-
-	// Register routes.
-	server.register(userRoutes, { prefix: `${API_PREFIX}/users` });
-
 	try {
+		// Register custom error handler.
+		server.setErrorHandler(handleError);
+
+		// Register JWT plugin.
+		server.register(jwt, {
+			secret: JWT_SECRET,
+		});
+
+		server.decorate('authenticate', async function (request: FastifyRequest, reply: FastifyReply) {
+			try {
+				await request.jwtVerify();
+			} catch (err) {
+				reply.send(err);
+			}
+		});
+
+		// Add schemas.
+		for (const schema of schemas) {
+			server.addSchema(schema);
+		}
+
+		// Register routes.
+		server.register(userRoutes, { prefix: `${API_PREFIX}/users` });
+		server.register(authRoutes, { prefix: `${API_PREFIX}` });
+
+		// Listen on PORT.
 		await server.listen({
 			port: PORT,
 			host: '0.0.0.0',

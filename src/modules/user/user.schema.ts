@@ -1,17 +1,9 @@
-import { buildJsonSchemas } from 'fastify-zod';
 import { z } from 'zod';
 
 /**
  * User core schema. To be used in other schemas.
  */
 const userCore = {
-	/**
-	 * User name.
-	 *
-	 * @min 2
-	 * @max 100
-	 * @required
-	 */
 	name: z
 		.string({
 			required_error: 'Name is a required field.',
@@ -20,12 +12,6 @@ const userCore = {
 		.min(2)
 		.max(100),
 
-	/**
-	 * User email.
-	 *
-	 * @email
-	 * @required
-	 */
 	email: z.string().email({
 		message: 'Invalid email address.',
 	}),
@@ -34,16 +20,8 @@ const userCore = {
 /**
  * User schema for validating user input for creating a new user.
  */
-const createUserInputSchema = z.object({
+export const createUserInputSchema = z.object({
 	...userCore,
-
-	/**
-	 * User password.
-	 *
-	 * @min 6
-	 * @max 100
-	 * @required
-	 */
 	password: z
 		.string({
 			required_error: 'Password is a required field.',
@@ -53,14 +31,12 @@ const createUserInputSchema = z.object({
 		.max(100),
 });
 
-const createUserResponseSchema = z.object({
+export const createUserResponseSchema = z.object({
 	success: z.boolean(),
-	data: z
-		.object({
-			...userCore,
-			id: z.string(),
-		})
-		.optional(),
+	data: z.object({
+		...userCore,
+		id: z.string(),
+	}),
 	error: z
 		.object({
 			message: z.string().nullable(),
@@ -70,13 +46,8 @@ const createUserResponseSchema = z.object({
 		.optional(),
 });
 
-const errorSchema = createUserResponseSchema.shape.error;
+const createUserDataResponseSchema = createUserResponseSchema.shape.data;
 
-export type ErrorResponseType = z.infer<typeof errorSchema>;
+export type CreateUserDataResponse = z.infer<typeof createUserDataResponseSchema>;
 export type CreateUserInput = z.infer<typeof createUserInputSchema>;
 export type CreateUserResponse = z.infer<typeof createUserResponseSchema>;
-
-export const { schemas: userSchemas, $ref } = buildJsonSchemas({
-	createUserInputSchema,
-	createUserResponseSchema,
-});
