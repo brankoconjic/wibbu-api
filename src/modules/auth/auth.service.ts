@@ -39,10 +39,10 @@ export const loginService = async (loginRequest: LoginRequest) => {
 		id: user.id,
 		email: user.email,
 		name: user.name,
+		role: user.role,
 	};
 
 	// Generate tokens
-
 	const accessToken = generateAccessToken(userData);
 	const refreshToken = generateRefreshToken(userData);
 
@@ -86,6 +86,7 @@ export const refreshTokenService = async (request: FastifyRequest) => {
 		id: user.id,
 		email: user.email,
 		name: user.name,
+		role: user.role,
 	};
 
 	// Generate tokens

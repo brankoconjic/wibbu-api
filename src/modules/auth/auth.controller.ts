@@ -6,6 +6,9 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 /**
  * Internal dependencies.
  */
+import WibbuException from '@/exceptions/WibbuException';
+import { hasAccess } from '@/utils/roles';
+import { AuthUserResponse } from '../user/user.schema';
 import { LoginRequest, LoginResponse, ProtectedResponse, RefreshTokenResponse } from './auth.schema';
 import { loginService, refreshTokenService } from './auth.service';
 
@@ -57,13 +60,20 @@ export const refreshTokenController = async (request: FastifyRequest, reply: Fas
 };
 
 export const protectedController = async (request: FastifyRequest, reply: FastifyReply) => {
-	const user = request.user as any;
+	const user = request.user as AuthUserResponse;
+
+	if (!hasAccess(user.role, 'ADMIN')) {
+		throw new WibbuException({
+			code: 'UNAUTHORIZED',
+			message: 'You are not authorized to access this resource',
+			statusCode: 401,
+		});
+	}
 
 	const payload: ProtectedResponse = {
 		success: true,
 		data: {
 			message: 'You are authorized!',
-			token: request.headers.authorization!,
 			user,
 		},
 	};

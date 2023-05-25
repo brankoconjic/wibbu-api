@@ -2,6 +2,7 @@
  * External imports.
  */
 import { z } from 'zod';
+import { roleSchema } from '../user/user.schema';
 
 export const loginRequestSchema = z.object({
 	email: z.string().email(),
@@ -19,11 +20,11 @@ export const protectedResponseSchema = z.object({
 	success: z.boolean(),
 	data: z.object({
 		message: z.string(),
-		token: z.string(),
 		user: z.object({
 			id: z.string(),
 			name: z.string(),
 			email: z.string(),
+			role: roleSchema,
 		}),
 	}),
 });

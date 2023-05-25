@@ -14,6 +14,7 @@ import authRoutes from '@/modules/auth/auth.routes';
 import userRoutes from '@/modules/user/user.routes';
 import { handleError } from '@/utils/handleErrors';
 import { schemas } from './utils/buildSchemas';
+import { AuthUserResponse } from './modules/user/user.schema';
 
 const logger =
 	process.env.NODE_ENV === 'development'

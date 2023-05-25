@@ -1,4 +1,13 @@
+/**
+ * External dependencies.
+ */
 import { z } from 'zod';
+
+/**
+ * Internal dependencies.
+ */
+import { ROLES } from '@/utils/roles';
+export const roleSchema = z.enum(ROLES);
 
 /**
  * User core schema. To be used in other schemas.
@@ -12,10 +21,14 @@ const userCore = {
 		.min(2)
 		.max(100),
 
-	email: z.string().email({
-		message: 'Invalid email address.',
-	}),
+	email: z.string().email({ message: 'Invalid email address.' }),
 };
+
+const userResponseCoreSchema = z.object({
+	...userCore,
+	id: z.string(),
+	role: roleSchema,
+});
 
 /**
  * User schema for validating user input for creating a new user.
@@ -33,10 +46,7 @@ export const createUserInputSchema = z.object({
 
 export const createUserResponseSchema = z.object({
 	success: z.boolean(),
-	data: z.object({
-		...userCore,
-		id: z.string(),
-	}),
+	data: userResponseCoreSchema,
 	error: z
 		.object({
 			message: z.string().nullable(),
@@ -51,3 +61,4 @@ const createUserDataResponseSchema = createUserResponseSchema.shape.data;
 export type CreateUserDataResponse = z.infer<typeof createUserDataResponseSchema>;
 export type CreateUserInput = z.infer<typeof createUserInputSchema>;
 export type CreateUserResponse = z.infer<typeof createUserResponseSchema>;
+export type AuthUserResponse = z.infer<typeof userResponseCoreSchema>;
