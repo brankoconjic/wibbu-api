@@ -15,5 +15,26 @@ export const loginResponseSchema = z.object({
 	}),
 });
 
+export const protectedResponseSchema = z.object({
+	success: z.boolean(),
+	data: z.object({
+		message: z.string(),
+		token: z.string(),
+		user: z.object({
+			id: z.string(),
+			name: z.string(),
+			email: z.string(),
+		}),
+	}),
+});
+
+const protectedUserRequestSchema = protectedResponseSchema.shape.data.shape.user;
+
+export type RefreshTokenResponse = z.infer<typeof loginResponseSchema>;
+export type ProtectedUserRequest = z.infer<typeof protectedUserRequestSchema>;
+
+export type ProtectedRequest = any;
+export type ProtectedResponse = z.infer<typeof protectedResponseSchema>;
+
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
 export type LoginResponse = z.infer<typeof loginResponseSchema>;

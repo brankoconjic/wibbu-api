@@ -1,8 +1,10 @@
 /**
  * External dependencies.
  */
+import cookie from '@fastify/cookie';
+import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
-import Fastify, { FastifyReply, FastifyRequest } from 'fastify';
+import Fastify, { FastifyRequest } from 'fastify';
 
 /**
  * Internal dependencies.
@@ -22,7 +24,7 @@ const logger =
 		  }
 		: false;
 
-export const server = Fastify({ logger: logger });
+export const server = Fastify({ logger: false });
 
 // Handle SIGTERM signal
 process.on('SIGTERM', async () => {
@@ -41,17 +43,23 @@ const start = async () => {
 		// Register custom error handler.
 		server.setErrorHandler(handleError);
 
+		// Register cookie plugin.
+		server.register(cookie);
+
+		// Register helmet plugin.
+		server.register(helmet, { global: true });
+
 		// Register JWT plugin.
 		server.register(jwt, {
 			secret: JWT_SECRET,
+			cookie: {
+				cookieName: 'refreshToken',
+				signed: false, // already signed by jwt
+			},
 		});
 
-		server.decorate('authenticate', async function (request: FastifyRequest, reply: FastifyReply) {
-			try {
-				await request.jwtVerify();
-			} catch (err) {
-				reply.send(err);
-			}
+		server.decorate('authenticate', async function (request: FastifyRequest) {
+			await request.jwtVerify();
 		});
 
 		// Add schemas.

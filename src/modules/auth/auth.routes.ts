@@ -1,6 +1,6 @@
 import { $ref } from '@/utils/buildSchemas';
 import { FastifyInstance } from 'fastify';
-import { loginController } from './auth.controller';
+import { loginController, protectedController, refreshTokenController } from './auth.controller';
 
 const authRoutes = async (server: FastifyInstance) => {
 	/**
@@ -19,19 +19,35 @@ const authRoutes = async (server: FastifyInstance) => {
 		loginController
 	);
 
+	/**
+	 * @route POST /refresh-token - Refresh tokens using refresh token.
+	 */
+	server.post(
+		'/refresh-token',
+		{
+			schema: {
+				response: {
+					200: $ref('loginResponseSchema'),
+				},
+			},
+		},
+		refreshTokenController
+	);
+
+	/**
+	 * @route GET /protected - Example protected route.
+	 */
 	server.get(
 		'/protected',
 		{
+			schema: {
+				response: {
+					200: $ref('protectedResponseSchema'),
+				},
+			},
 			onRequest: [server.authenticate],
 		},
-
-		// Temporary solution to get user data!
-		async (request: any, reply: any) => {
-			return {
-				message: 'You are in a protected route',
-				user: request.user,
-			};
-		}
+		protectedController
 	);
 };
 
