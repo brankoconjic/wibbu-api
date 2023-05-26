@@ -4,6 +4,6 @@ export type Role = (typeof ROLES)[number];
 /**
  * Check if user has access.
  */
-export function hasAccess(userRole: Role, requiredRole: Role) {
-	return userRole === requiredRole;
+export function hasAccess(userRole: Role, requiredRoles: Role[]) {
+	return requiredRoles.includes(userRole);
 }

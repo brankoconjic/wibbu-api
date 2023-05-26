@@ -24,9 +24,9 @@ const userCore = {
 	email: z.string().email({ message: 'Invalid email address.' }),
 };
 
-const userResponseCoreSchema = z.object({
+export const userResponseCoreSchema = z.object({
 	...userCore,
-	id: z.string(),
+	id: z.string().regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/, 'Must be a valid UUID'),
 	role: roleSchema,
 });
 

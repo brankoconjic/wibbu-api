@@ -9,7 +9,7 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 import WibbuException from '@/exceptions/WibbuException';
 import { hasAccess } from '@/utils/roles';
 import { AuthUserResponse } from '../user/user.schema';
-import { LoginRequest, LoginResponse, ProtectedResponse, RefreshTokenResponse } from './auth.schema';
+import { LoginRequest, LoginResponse, RefreshTokenResponse } from './auth.schema';
 import { loginService, refreshTokenService } from './auth.service';
 
 /**
@@ -18,12 +18,13 @@ import { loginService, refreshTokenService } from './auth.service';
 export const loginController = async (request: FastifyRequest<{ Body: LoginRequest }>, reply: FastifyReply) => {
 	const loginRequest = request.body;
 
-	const { accessToken, refreshToken } = await loginService(loginRequest);
+	const { accessToken, refreshToken, user } = await loginService(loginRequest);
 
 	const payload: LoginResponse = {
 		success: true,
 		data: {
 			accessToken,
+			user,
 		},
 	};
 
@@ -60,21 +61,10 @@ export const refreshTokenController = async (request: FastifyRequest, reply: Fas
 };
 
 export const protectedController = async (request: FastifyRequest, reply: FastifyReply) => {
-	const user = request.user as AuthUserResponse;
-
-	if (!hasAccess(user.role, 'ADMIN')) {
-		throw new WibbuException({
-			code: 'UNAUTHORIZED',
-			message: 'You are not authorized to access this resource',
-			statusCode: 401,
-		});
-	}
-
-	const payload: ProtectedResponse = {
+	const payload: any = {
 		success: true,
 		data: {
-			message: 'You are authorized!',
-			user,
+			message: 'You are authorized to access this resource. Congratulations!',
 		},
 	};
 

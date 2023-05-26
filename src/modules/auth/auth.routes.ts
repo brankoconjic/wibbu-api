@@ -27,7 +27,7 @@ const authRoutes = async (server: FastifyInstance) => {
 		{
 			schema: {
 				response: {
-					200: $ref('loginResponseSchema'),
+					200: $ref('refreshTokenResponseSchema'),
 				},
 			},
 		},
@@ -35,17 +35,12 @@ const authRoutes = async (server: FastifyInstance) => {
 	);
 
 	/**
-	 * @route GET /protected - Example protected route.
+	 * @route GET /protected - Example protected route. Requires user to have 'ADMIN' role.
 	 */
 	server.get(
 		'/protected',
 		{
-			schema: {
-				response: {
-					200: $ref('protectedResponseSchema'),
-				},
-			},
-			onRequest: [server.authenticate],
+			onRequest: [server.authorize(['ADMIN'])],
 		},
 		protectedController
 	);

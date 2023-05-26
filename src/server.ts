@@ -4,7 +4,7 @@
 import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
-import Fastify, { FastifyRequest } from 'fastify';
+import Fastify from 'fastify';
 
 /**
  * Internal dependencies.
@@ -13,8 +13,10 @@ import { API_PREFIX, JWT_SECRET, PORT } from '@/config/environment';
 import authRoutes from '@/modules/auth/auth.routes';
 import userRoutes from '@/modules/user/user.routes';
 import { handleError } from '@/utils/handleErrors';
+import { Role } from '@prisma/client';
+import WibbuException from './exceptions/WibbuException';
 import { schemas } from './utils/buildSchemas';
-import { AuthUserResponse } from './modules/user/user.schema';
+import { hasAccess } from './utils/roles';
 
 const logger =
 	process.env.NODE_ENV === 'development'
@@ -59,8 +61,24 @@ const start = async () => {
 			},
 		});
 
-		server.decorate('authenticate', async function (request: FastifyRequest) {
-			await request.jwtVerify();
+		/* -------------------------------------------------------------------------- */
+		/*                  Add custom decorator to authorize users.                  */
+		/* -------------------------------------------------------------------------- */
+		server.decorate('authorize', (roles: Role[]) => {
+			return async (request: any) => {
+				// Check access token.
+				await request.jwtVerify();
+				const userRole = request.user.role;
+
+				// Check if user role is contained within roles.
+				if (!hasAccess(userRole, roles)) {
+					throw new WibbuException({
+						statusCode: 403,
+						code: 'FORBIDDEN',
+						message: 'You are not allowed to access this resource.',
+					});
+				}
+			};
 		});
 
 		// Add schemas.

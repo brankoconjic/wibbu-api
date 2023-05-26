@@ -6,14 +6,14 @@ import bcrypt from 'bcrypt';
 /**
  * Internal dependencies.
  */
-import { CreateUserDataResponse } from '@/modules/user/user.schema';
+import { JWTPayloadType } from '@/modules/auth/auth.schema';
 import { server } from '@/server';
 
 /**
  * Generate access token. This token contains user data.
  */
-export const generateAccessToken = (user: CreateUserDataResponse) => {
-	return server.jwt.sign(user, {
+export const generateAccessToken = (userData: JWTPayloadType) => {
+	return server.jwt.sign(userData, {
 		expiresIn: '15m',
 	});
 };
@@ -21,8 +21,8 @@ export const generateAccessToken = (user: CreateUserDataResponse) => {
 /**
  * Generate refresh token. This token contains user ID.
  */
-export const generateRefreshToken = (user: CreateUserDataResponse) => {
-	return server.jwt.sign({ id: user.id }, { expiresIn: '7d' });
+export const generateRefreshToken = (userData: JWTPayloadType) => {
+	return server.jwt.sign({ sub: userData.sub }, { expiresIn: '7d' });
 };
 
 /**

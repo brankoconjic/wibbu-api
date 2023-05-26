@@ -3,8 +3,7 @@
  */
 import prisma from '@/config/database';
 import WibbuException from '@/exceptions/WibbuException';
-import { LoginRequest } from '@/modules/auth/auth.schema';
-import { CreateUserDataResponse } from '@/modules/user/user.schema';
+import { JWTPayloadType, LoginRequest } from '@/modules/auth/auth.schema';
 import { server } from '@/server';
 import { generateAccessToken, generateRefreshToken, verifyPassword } from '@/utils/auth';
 import { FastifyRequest } from 'fastify';
@@ -35,8 +34,8 @@ export const loginService = async (loginRequest: LoginRequest) => {
 	}
 
 	// Remove sensitive information.
-	const userData: CreateUserDataResponse = {
-		id: user.id,
+	const userData: JWTPayloadType = {
+		sub: user.id,
 		email: user.email,
 		name: user.name,
 		role: user.role,
@@ -47,7 +46,7 @@ export const loginService = async (loginRequest: LoginRequest) => {
 	const refreshToken = generateRefreshToken(userData);
 
 	// Return data
-	return { accessToken, refreshToken };
+	return { accessToken, refreshToken, user };
 };
 
 /**
@@ -59,10 +58,10 @@ export const refreshTokenService = async (request: FastifyRequest) => {
 
 	// Decode refresh token
 	// @ts-ignore
-	const decodedToken = server.jwt.decode(request.cookies.refreshToken) as { id: string; iat: number; exp: number; exp: number };
-	const { id } = decodedToken;
+	const decodedToken = server.jwt.decode(request.cookies.refreshToken) as { sub: string; iat: number; exp: number };
+	const { sub } = decodedToken;
 
-	if (!id) {
+	if (!sub) {
 		throw new WibbuException({
 			code: 'INVALID_ACCESS_TOKEN',
 			message: 'Invalid access token',
@@ -71,7 +70,7 @@ export const refreshTokenService = async (request: FastifyRequest) => {
 	}
 
 	// Find user by id
-	const user = await findUserById(id);
+	const user = await findUserById(sub);
 
 	if (!user) {
 		throw new WibbuException({
@@ -82,8 +81,8 @@ export const refreshTokenService = async (request: FastifyRequest) => {
 	}
 
 	// Remove sensitive information.
-	const userData: CreateUserDataResponse = {
-		id: user.id,
+	const userData: JWTPayloadType = {
+		sub: user.id,
 		email: user.email,
 		name: user.name,
 		role: user.role,
