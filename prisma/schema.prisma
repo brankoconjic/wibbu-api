@@ -10,25 +10,24 @@ datasource db {
 }
 
 model User {
-  id                String   @id @default(uuid()) @db.Uuid
-  email             String   @unique
+  id                String             @id @default(uuid()) @db.Uuid
+  email             String             @unique
   name              String
   password          String
-  role              Role     @default(USER)
-  createdAt         DateTime @default(now())
-  IdentityProviders IdentityProvider[]
+  role              Role               @default(USER)
+  createdAt         DateTime           @default(now())
+  socialConnections SocialConnection[]
 }
 
-model IdentityProvider {
-  id                String   @id @default(uuid()) @db.Uuid
-  provider          Provider
-  Users             User[]
-}
-
-model IdentityToken {
-  id                String   @id @default(uuid()) @db.Uuid
-  accessToken       String
-  refreshToken      String
+model SocialConnection {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @db.Uuid
+  provider     Provider
+  accessToken  String
+  refreshToken String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  User         User     @relation(fields: [userId], references: [id])
 }
 
 enum Role {
@@ -37,7 +36,6 @@ enum Role {
 }
 
 enum Provider {
-    DISCORD
-    TWITTER
+  DISCORD
+  TWITTER
 }
-    

@@ -23,6 +23,7 @@
 		"@fastify/cookie": "^8.3.0",
 		"@fastify/helmet": "^10.1.1",
 		"@fastify/jwt": "^7.0.0",
+		"@fastify/oauth2": "^7.1.0",
 		"@prisma/client": "^4.14.1",
 		"bcrypt": "^5.1.0",
 		"dotenv": "^16.0.3",

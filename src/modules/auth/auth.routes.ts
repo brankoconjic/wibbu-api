@@ -1,5 +1,12 @@
-import { $ref } from '@/utils/buildSchemas';
+/**
+ * External dependencies.
+ */
 import { FastifyInstance } from 'fastify';
+
+/**
+ * Internal dependencies.
+ */
+import { $ref } from '@/utils/buildSchemas';
 import { loginController, protectedController, refreshTokenController } from './auth.controller';
 
 const authRoutes = async (server: FastifyInstance) => {

@@ -6,9 +6,7 @@ import { FastifyReply, FastifyRequest } from 'fastify';
 /**
  * Internal dependencies.
  */
-import WibbuException from '@/exceptions/WibbuException';
-import { hasAccess } from '@/utils/roles';
-import { AuthUserResponse } from '../user/user.schema';
+import { server } from '@/server';
 import { LoginRequest, LoginResponse, RefreshTokenResponse } from './auth.schema';
 import { loginService, refreshTokenService } from './auth.service';
 
