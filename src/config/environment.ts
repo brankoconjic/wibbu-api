@@ -8,10 +8,11 @@ if (!process.env.DATABASE_URL || !process.env.JWT_SECRET || !process.env.CSRF_SE
 	process.exit(1);
 }
 
+export const API_VERSION = 'v1' as const;
+
 export const WIBBU_DOMAIN = 'https://socialsnap.com' as const;
 export const API_BASE = 'http://localhost:3300' as const;
-export const API_VERSION = 'v1' as const;
-export const API_PREFIX = `api/${API_VERSION}` as const;
+export const API_PREFIX = `${API_VERSION}` as const;
 
 export const DATABASE_URL = process.env.DATABASE_URL;
 export const JWT_SECRET = process.env.JWT_SECRET;

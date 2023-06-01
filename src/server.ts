@@ -16,9 +16,9 @@ import userRoutes from '@/modules/user/user.routes';
 import { handleError } from '@/utils/handleErrors';
 import { Role } from '@prisma/client';
 import WibbuException from './exceptions/WibbuException';
+import oauthRoutes from './modules/oauth/oauth.routes';
 import { schemas } from './utils/buildSchemas';
 import { hasAccess } from './utils/roles';
-import oauthRoutes from './modules/oauth/oauth.routes';
 
 const logger =
 	process.env.NODE_ENV === 'development'
@@ -91,14 +91,14 @@ const start = async () => {
 		// Register routes.
 		server.register(userRoutes, { prefix: `${API_PREFIX}/users` });
 		server.register(authRoutes, { prefix: `${API_PREFIX}` });
-		server.register(oauthRoutes, { prefix: `${API_PREFIX}/oauth` });
+		server.register(oauthRoutes, { prefix: `oauth2` });
 
 		// Check if user is authenticated when accessing.
 		server.addHook('onRequest', async (request) => {
 			// Check if request contains /api/v1/oauth
-			if (request.url.includes(`${API_PREFIX}/oauth`)) {
-				await request.jwtVerify();
-			}
+			// if (request.url.includes(`/oauth/redirect/`)) {
+			// 	await request.jwtVerify();
+			// }
 		});
 
 		// Register OAuth2 plugin.
@@ -112,8 +112,8 @@ const start = async () => {
 				},
 				auth: oauth2.DISCORD_CONFIGURATION,
 			},
-			startRedirectPath: `/${API_PREFIX}/oauth/discord`,
-			callbackUri: `${API_BASE}/${API_PREFIX}/oauth/discord/callback`,
+			startRedirectPath: `/oauth2/discord`,
+			callbackUri: `${API_BASE}/oauth2/discord/callback`,
 			generateStateFunction: (
 				request: FastifyRequest<{
 					Querystring: {
@@ -139,7 +139,7 @@ const start = async () => {
 					throw new WibbuException({
 						statusCode: 403,
 						code: 'FORBIDDEN',
-						message: 'State verification failed.',
+						message: 'State verification failed.', // CSRF is not valid.
 					});
 				}
 
