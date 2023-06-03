@@ -1,18 +1,28 @@
 /**
  * External dependencies.
  */
-import { FastifyInstance } from 'fastify';
+import type { FastifyInstance } from 'fastify';
 
 /**
  * Internal dependencies.
  */
-import { discordController } from './oauth.controller';
+import { discordCallbackController, connectController } from './oauth.controller';
+import { SocialConnection } from '@/types/fastify';
 
 const oauthRoutes = async (server: FastifyInstance) => {
-	/**
-	 * @route GET /discord/callback - Discord OAuth2 login page redirect handler.
-	 */
-	server.get('/discord/callback', discordController);
+	const connections: SocialConnection[] = ['DISCORD'];
+
+	// Check authorization.
+	// @todo - enable on production.
+	// server.addHook('onRequest', server.authorize(['ADMIN']));
+
+	// Register ouath connect controllers.
+	for (const connection of connections) {
+		server.get(`/connect/${connection.toLowerCase()}`, connectController);
+	}
+
+	// Register callback controllers.
+	server.get(`/callback/discord`, discordCallbackController);
 };
 
 export default oauthRoutes;

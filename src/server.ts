@@ -5,16 +5,17 @@ import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
 import oauth2 from '@fastify/oauth2';
-import Fastify, { FastifyRequest } from 'fastify';
+import { Role } from '@prisma/client';
+import Fastify from 'fastify';
 
 /**
  * Internal dependencies.
  */
-import { API_BASE, API_PREFIX, CSRF_SECRET, DISCORD_CLIENT, DISCORD_SECRET, JWT_SECRET, PORT, WIBBU_DOMAIN } from '@/config/environment';
+import { API_PREFIX, JWT_SECRET, PORT } from '@/config/environment';
 import authRoutes from '@/modules/auth/auth.routes';
 import userRoutes from '@/modules/user/user.routes';
 import { handleError } from '@/utils/handleErrors';
-import { Role } from '@prisma/client';
+import { discordConfig } from './config/connectionsConfig';
 import WibbuException from './exceptions/WibbuException';
 import oauthRoutes from './modules/oauth/oauth.routes';
 import { schemas } from './utils/buildSchemas';
@@ -29,7 +30,7 @@ const logger =
 		  }
 		: false;
 
-export const server = Fastify({ logger });
+export const server = Fastify({ logger: false });
 
 // Handle SIGTERM signal
 process.on('SIGTERM', async () => {
@@ -52,7 +53,9 @@ const start = async () => {
 		server.register(cookie);
 
 		// Register helmet plugin.
-		server.register(helmet, { global: true });
+		server.register(helmet, {
+			crossOriginOpenerPolicy: false, // @todo: look for better solution.
+		});
 
 		// Register JWT plugin.
 		server.register(jwt, {
@@ -91,61 +94,10 @@ const start = async () => {
 		// Register routes.
 		server.register(userRoutes, { prefix: `${API_PREFIX}/users` });
 		server.register(authRoutes, { prefix: `${API_PREFIX}` });
-		server.register(oauthRoutes, { prefix: `oauth2` });
+		server.register(oauthRoutes, { prefix: `oauth` });
 
-		// Check if user is authenticated when accessing.
-		server.addHook('onRequest', async (request) => {
-			// Check if request contains /api/v1/oauth
-			// if (request.url.includes(`/oauth/redirect/`)) {
-			// 	await request.jwtVerify();
-			// }
-		});
-
-		// Register OAuth2 plugin.
-		server.register(oauth2, {
-			name: 'discord',
-			scope: ['identify', 'email'],
-			credentials: {
-				client: {
-					id: DISCORD_CLIENT!,
-					secret: DISCORD_SECRET!,
-				},
-				auth: oauth2.DISCORD_CONFIGURATION,
-			},
-			startRedirectPath: `/oauth2/discord`,
-			callbackUri: `${API_BASE}/oauth2/discord/callback`,
-			generateStateFunction: (
-				request: FastifyRequest<{
-					Querystring: {
-						returnUrl?: string;
-					};
-				}>
-			) => {
-				// Create state payload for OAuth2.
-				const statePayload = {
-					csrf: CSRF_SECRET,
-					returnUrl: request.query.returnUrl || WIBBU_DOMAIN,
-				};
-
-				// Send state as a JWT to prevent CSRF.
-				return server.jwt.sign(statePayload);
-			},
-
-			// Custom function to check the stat is valid.
-			checkStateFunction: (state: string, callback: () => void) => {
-				const { csrf } = server.jwt.decode(state) as { csrf: string; returnUrl: string };
-
-				if (csrf !== CSRF_SECRET) {
-					throw new WibbuException({
-						statusCode: 403,
-						code: 'FORBIDDEN',
-						message: 'State verification failed.', // CSRF is not valid.
-					});
-				}
-
-				callback();
-			},
-		});
+		// Register social connections oauth2.
+		server.register(oauth2, discordConfig);
 
 		// Listen on PORT.
 		await server.listen({
