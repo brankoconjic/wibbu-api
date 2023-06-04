@@ -6,8 +6,8 @@ import { FastifyInstance } from 'fastify';
 /**
  * Internal dependencies.
  */
-import { $ref } from '@/utils/buildSchemas';
-import { loginController, protectedController, refreshTokenController } from './auth.controller';
+import { $ref } from '@/modules/auth/auth.schema';
+import { loginController } from './auth.controllers';
 
 const authRoutes = async (server: FastifyInstance) => {
 	/**
@@ -24,32 +24,6 @@ const authRoutes = async (server: FastifyInstance) => {
 			},
 		},
 		loginController
-	);
-
-	/**
-	 * @route POST /refresh-token - Refresh tokens using refresh token.
-	 */
-	server.post(
-		'/refresh-token',
-		{
-			schema: {
-				response: {
-					200: $ref('refreshTokenResponseSchema'),
-				},
-			},
-		},
-		refreshTokenController
-	);
-
-	/**
-	 * @route GET /protected - Example protected route. Requires user to have 'ADMIN' role.
-	 */
-	server.get(
-		'/protected',
-		{
-			onRequest: [server.authorize(['ADMIN'])],
-		},
-		protectedController
 	);
 };
 

@@ -5,7 +5,7 @@
 	"main": "index.js",
 	"scripts": {
 		"start": "rimraf dist && tsc && node -r module-alias/register dist/server.js",
-		"dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/*.ts"
+		"dev": "ts-node-dev --respawn --transpile-only -r tsconfig-paths/register src/**/*.ts"
 	},
 	"keywords": [],
 	"author": "",

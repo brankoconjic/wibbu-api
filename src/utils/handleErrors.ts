@@ -1,7 +1,15 @@
+/**
+ * External dependencies.
+ */
 import { Prisma } from '@prisma/client';
-import { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
+import type { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 
-const GENERIC_ERROR_MESSAGE = 'An error occurred.' as const;
+/**
+ * Internal dependencies.
+ */
+import { isDev } from './misc';
+
+const DEFAULT_ERROR_MESSAGE = 'An unexpected error occurred.' as const;
 
 type ErrorResponseType = {
 	message: string;
@@ -13,19 +21,27 @@ type ReturnErrorType = {
 	error: ErrorResponseType;
 };
 
+/**
+ * Handle errors. Returns default error response if in production.
+ *
+ * @param error - The error to handle.
+ * @param request - The request object.
+ * @param reply - The reply object.
+ * @returns The error response.
+ */
 export const handleError = (error: Prisma.PrismaClientKnownRequestError | FastifyError | Error, request: FastifyRequest, reply: FastifyReply) => {
 	let errObj: ReturnErrorType = {
 		success: false,
 		error: {
-			message: GENERIC_ERROR_MESSAGE,
-			code: 'UNKNOWN_ERROR',
+			message: DEFAULT_ERROR_MESSAGE,
+			code: 'INTERNAL_SERVER_ERROR',
 		},
 	};
 
 	// Handle duplicate record error
 	if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
 		errObj.error = {
-			message: `Record already exists. Please use a different value for {${error?.meta?.target}}.`,
+			message: isDev() ? `Record already exists. Please use a different value for {${error?.meta?.target}}.` : DEFAULT_ERROR_MESSAGE,
 			code: 'DUPLICATE_ERROR',
 		};
 
@@ -34,11 +50,12 @@ export const handleError = (error: Prisma.PrismaClientKnownRequestError | Fastif
 
 	// Handle other errors
 	const fastifyError = error as FastifyError;
-	if ((error as FastifyError) instanceof Error) {
+
+	if (fastifyError instanceof Error) {
 		const statusCode = fastifyError?.statusCode ? fastifyError.statusCode : 500;
 		errObj.error = {
-			message: process.env.NODE_ENV === 'development' ? fastifyError.message : GENERIC_ERROR_MESSAGE,
-			code: process.env.NODE_ENV === 'development' ? fastifyError.code : 'INTERNAL_SERVER_ERROR',
+			message: isDev() ? fastifyError.message : DEFAULT_ERROR_MESSAGE,
+			code: isDev() ? fastifyError.code : DEFAULT_ERROR_MESSAGE,
 		};
 
 		return reply.status(statusCode).send(errObj);

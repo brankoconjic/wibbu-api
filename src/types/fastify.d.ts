@@ -19,13 +19,6 @@ declare module 'fastify' {
 
 declare module 'fastify' {
 	interface FastifyInstance {
-		discord: OAuth2Namespace;
+		// discord: OAuth2Namespace;
 	}
 }
-
-const socialConnection = {
-	discord: 'DISCORD',
-	google: 'GOOGLE',
-} as const;
-
-export type SocialConnection = (typeof socialConnection)[keyof typeof socialConnection];

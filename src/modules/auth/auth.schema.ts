@@ -1,55 +1,51 @@
 /**
- * External imports.
+ * External dependencies.
  */
 import { z } from 'zod';
 
 /**
- * Internal imports.
+ * Internal dependencies.
  */
-import { roleSchema, userResponseCoreSchema } from '../user/user.schema';
+import { apiBaseSchema } from '@/config/schema';
+import { buildJsonSchemas } from 'fastify-zod';
 
-export const uuidSchema = z.string().regex(/^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-4[0-9a-fA-F]{3}-[89aAbB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/, 'Must be a valid UUID');
+const loginEnum = z.enum(['password', 'oauth']);
+const roleEnum = z.enum(['user', 'admin']);
 
-export const loginRequestSchema = z.object({
-	email: z.string().email(),
-	password: z.string().min(6),
+export const userSchema = z.object({
+	id: z.string().uuid(),
+	name: z.string(),
+	email: z.string().email().nullish(),
+	role: roleEnum,
 });
 
-export const loginResponseSchema = z.object({
-	success: z.boolean(),
+const passwordLoginSchema = z.object({
+	type: z.literal('password'),
+	email: z.string().email(),
+	password: z.string().min(8),
+});
+
+const oauthLoginSchema = z.object({
+	type: z.literal('oauth'),
+	token: z.string(),
+});
+
+export const loginRequestSchema = z.discriminatedUnion('type', [passwordLoginSchema, oauthLoginSchema]);
+
+export const loginResponseSchema = apiBaseSchema.extend({
 	data: z.object({
 		accessToken: z.string(),
-		user: userResponseCoreSchema,
+		user: userSchema,
 	}),
 });
 
-export const JWTPayloadSchema = z.object({
-	sub: uuidSchema,
-	email: z.string(),
-	name: z.string(),
-	role: roleSchema,
-});
+/* ---------------------------------- Types --------------------------------- */
+export type UserType = z.infer<typeof userSchema>;
+export type LoginType = z.infer<typeof loginEnum>;
+export type RoleType = z.infer<typeof roleEnum>;
 
-export const protectedResponseSchema = z.object({
-	success: z.boolean(),
-	data: z.object({
-		message: z.string(),
-		user: JWTPayloadSchema,
-	}),
-});
-
-export const refreshTokenResponseSchema = z.object({
-	success: z.boolean(),
-	data: z.object({
-		accessToken: uuidSchema,
-	}),
-});
-
-const protectedUserRequestSchema = protectedResponseSchema.shape.data.shape.user;
-
-export type ProtectedUserRequest = z.infer<typeof protectedUserRequestSchema>;
-
-export type RefreshTokenResponse = z.infer<typeof refreshTokenResponseSchema>;
-export type JWTPayloadType = z.infer<typeof JWTPayloadSchema>;
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
 export type LoginResponse = z.infer<typeof loginResponseSchema>;
+
+/* --------------------- Build and add schemas to server -------------------- */
+export const { schemas: authSchemas, $ref } = buildJsonSchemas({ loginRequestSchema, loginResponseSchema });
