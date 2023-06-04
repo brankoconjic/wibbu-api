@@ -3,11 +3,13 @@
  */
 import prisma from '@/config/database';
 import WibbuException from '@/exceptions/WibbuException';
-import { generateAccessToken, generateRefreshToken } from '@/utils/auth';
+import { generateAccessToken, generateRefreshToken, verifyPassword } from '@/utils/auth';
 import { pruneProperties } from '@/utils/misc';
-import { User } from '@prisma/client';
 import { LoginRequest, UserType, userSchema } from './auth.schema';
 
+/**
+ * Login user with username or oauth.
+ */
 export const loginService = async (data: LoginRequest) => {
 	if (data.type === 'password') {
 		// Find user by email.
@@ -25,14 +27,13 @@ export const loginService = async (data: LoginRequest) => {
 		if (!user.password) {
 			throw new WibbuException({
 				code: 'OAUTH_ONLY',
-				message: 'User logged with OAuth only',
+				message: 'User logged in with OAuth only',
 				statusCode: 401,
 			});
 		}
 
 		// Validate password.
-		// const isPasswordValid = await verifyPassword(data.password, user.password);
-		const isPasswordValid = true;
+		const isPasswordValid = await verifyPassword(data.password, user.password);
 
 		if (!isPasswordValid) {
 			throw new WibbuException({
@@ -52,8 +53,17 @@ export const loginService = async (data: LoginRequest) => {
 
 		return { accessToken, refreshToken, user: prunedUser };
 	} else if (data.type === 'oauth') {
+		/* {token} is JWT encoded with id, email, name accessToken and refreshToken */
+		// find user by email, if email exists update user with new login data (oAuth)
+		// find user by id if email does not exist
+		// if user exists, update user with new data
+
+		// if user does not exist, create user with data
+
 		return {
 			user: 'bla',
+			refreshToken: '1231',
+			accessToken: '123',
 		};
 	} else {
 		throw new WibbuException({
@@ -67,6 +77,13 @@ export const loginService = async (data: LoginRequest) => {
 /* -------------------------------------------------------------------------- */
 /*                                   Helpers                                  */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * Find user by email.
+ *
+ * @param email - User email.
+ * @returns User object or null if not found.
+ */
 export const findUserByEmail = async (email: string) => {
 	const foundUser = await prisma.user.findUnique({
 		where: {
