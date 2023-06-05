@@ -4,6 +4,7 @@
 import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
+import oauth2 from '@fastify/oauth2';
 import Fastify from 'fastify';
 
 /**
@@ -11,6 +12,7 @@ import Fastify from 'fastify';
  */
 import { API_PREFIX, JWT_SECRET, PORT } from '@/config/environment';
 import { handleError } from '@/utils/handleErrors';
+import { socialConnections } from './config/socialConnections';
 import authRoutes from './modules/auth/auth.routes';
 import { authSchemas } from './modules/auth/auth.schema';
 
@@ -23,7 +25,7 @@ const logger =
 		  }
 		: false;
 
-export const server = Fastify({ logger });
+export const server = Fastify({ logger: false });
 
 // Handle SIGTERM signal
 process.on('SIGTERM', async () => {
@@ -66,6 +68,11 @@ const start = async () => {
 
 		// Register routes.
 		server.register(authRoutes, { prefix: `${API_PREFIX}/auth` });
+
+		// Register OAuth2 providers.
+		for (const config of socialConnections) {
+			server.register(oauth2, config);
+		}
 
 		// Listen on PORT.
 		await server.listen({

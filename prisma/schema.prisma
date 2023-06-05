@@ -16,12 +16,12 @@ enum Role {
 }
 
 enum AuthProviderType {
-  twitter
+  google
 }
 
 enum SocialConnectionType {
-  twitter
-  pinterest
+  twitch
+  facebook
 }
 
 // --------------------------------  Models ------------------------------- */

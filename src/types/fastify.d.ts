@@ -19,6 +19,6 @@ declare module 'fastify' {
 
 declare module 'fastify' {
 	interface FastifyInstance {
-		// discord: OAuth2Namespace;
+		google: OAuth2Namespace;
 	}
 }

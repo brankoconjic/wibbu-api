@@ -11,6 +11,7 @@ import { buildJsonSchemas } from 'fastify-zod';
 
 const loginEnum = z.enum(['password', 'oauth']);
 const roleEnum = z.enum(['user', 'admin']);
+export const authProvidersSchema = z.enum(['google']);
 
 export const userSchema = z.object({
 	id: z.string().uuid(),
