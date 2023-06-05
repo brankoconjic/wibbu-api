@@ -1,7 +1,7 @@
 /**
  * External dependencies.
  */
-import { z } from 'zod';
+import { nullable, optional, z } from 'zod';
 
 /**
  * Internal dependencies.
@@ -17,6 +17,7 @@ export const userSchema = z.object({
 	id: z.string().uuid(),
 	name: z.string(),
 	email: z.string().email().nullish(),
+	profilePicture: z.string().url().nullish(),
 	role: roleEnum,
 });
 
@@ -42,6 +43,7 @@ export const loginResponseSchema = apiBaseSchema.extend({
 
 /* ---------------------------------- Types --------------------------------- */
 export type UserType = z.infer<typeof userSchema>;
+
 export type LoginType = z.infer<typeof loginEnum>;
 export type RoleType = z.infer<typeof roleEnum>;
 

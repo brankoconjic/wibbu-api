@@ -1,16 +1,24 @@
 /**
+ * External dependencies.
+ */
+import { Token } from '@fastify/oauth2';
+
+/**
  * Internal dependencies.
  */
 import prisma from '@/config/database';
 import WibbuException from '@/exceptions/WibbuException';
+import { server } from '@/server';
+import { GoogleIdTokenType, TokenUserDataType } from '@/types/connectionTypes';
 import { generateAccessToken, generateRefreshToken, verifyPassword } from '@/utils/auth';
 import { pruneProperties } from '@/utils/misc';
+import { AuthProviderType, User } from '@prisma/client';
 import { LoginRequest, UserType, userSchema } from './auth.schema';
 
 /**
  * Login user with username or oauth.
  */
-export const loginService = async (data: LoginRequest) => {
+export const login = async (data: LoginRequest) => {
 	if (data.type === 'password') {
 		// Find user by email.
 		const user = await findUserByEmail(data.email);
@@ -74,9 +82,109 @@ export const loginService = async (data: LoginRequest) => {
 	}
 };
 
+/**
+ * Update or create user with token. Used for both login and signup.
+ *
+ * @param token - Access token containing information from the user.
+ * @returns User object.
+ */
+export const upsertUserWithToken = async (token: Token, provider: AuthProviderType) => {
+	const userData = await getUserDataFromToken(token, provider);
+	let user: User | null | undefined = null;
+
+	// Look for user by providerId.
+	const authProvider = await findAuthProviderById(userData.providerId);
+	user = authProvider?.User;
+
+	// If we cannot get User through authProvider, try getting user by email.
+	if (!user && userData.email) {
+		user = await findUserByEmail(userData.email);
+	}
+
+	if (user) {
+		console.log('User already exists! Safe to assume that this is a successful login.');
+
+		// Update user
+		return user;
+	} else {
+		// If we cannot get User through authProvider or email, it means it's a new user so create new User and authProvider from token.
+		user = await prisma.user.create({
+			data: {
+				name: userData.name,
+				email: userData.email,
+				profileImage: userData.profileImage,
+			},
+		});
+
+		// Create authProvider.
+		await prisma.authProvider.create({
+			data: {
+				id: userData.providerId,
+				userId: user.id,
+				provider,
+			},
+		});
+	}
+
+	// Return newly created user.
+	return user;
+};
+
 /* -------------------------------------------------------------------------- */
 /*                                   Helpers                                  */
 /* -------------------------------------------------------------------------- */
+
+/**
+ * Get user data from token. Return normalized user data.
+ *
+ * @param token - Access token containing information from the user.
+ * @param provider - Auth provider.
+ * @returns User data.
+ */
+const getUserDataFromToken = async (token: Token, provider: AuthProviderType) => {
+	let userData: TokenUserDataType | null = null;
+
+	// Google
+	if (provider === 'google') {
+		const { id_token } = token;
+
+		if (!id_token) {
+			throw new WibbuException({
+				message: 'Invalid payload',
+				code: 'BAD_REQUEST',
+				statusCode: 400,
+			});
+		}
+
+		const decodedProviderToken = server.jwt.decode<GoogleIdTokenType>(id_token);
+
+		if (!decodedProviderToken) {
+			throw new WibbuException({
+				message: 'Invalid payload',
+				code: 'BAD_REQUEST',
+				statusCode: 400,
+			});
+		}
+
+		// Set user data.
+		userData = {
+			providerId: decodedProviderToken?.sub,
+			name: decodedProviderToken?.name,
+			email: decodedProviderToken?.email_verified ? decodedProviderToken?.email : null,
+			profileImage: decodedProviderToken?.picture,
+		};
+	}
+
+	if (!userData) {
+		throw new WibbuException({
+			message: 'Unable to get user data from token',
+			code: 'BAD_REQUEST',
+			statusCode: 400,
+		});
+	}
+
+	return userData;
+};
 
 /**
  * Find user by email.
@@ -92,4 +200,19 @@ export const findUserByEmail = async (email: string) => {
 	});
 
 	return foundUser;
+};
+
+/**
+ * Find auth provider by provider id.
+ *
+ * @param providerId - Auth provider id.
+ * @returns authProvider object or null if not found.
+ */
+export const findAuthProviderById = async (providerId: string) => {
+	const authProvider = await prisma.authProvider.findUnique({
+		where: { id: providerId },
+		include: { User: true },
+	});
+
+	return authProvider;
 };

@@ -12,13 +12,13 @@ import { server } from '@/server';
 import { isDev } from '@/utils/misc';
 import { AuthProviderType } from '@prisma/client';
 import { LoginRequest, authProvidersSchema } from './auth.schema';
-import { loginService } from './auth.services';
+import { login, upsertUserWithToken } from './auth.services';
 
 /**
  * Login controller.
  */
 export const loginController = async (request: FastifyRequest<{ Body: LoginRequest }>, reply: FastifyReply) => {
-	const { accessToken, refreshToken, user } = await loginService(request.body);
+	const { accessToken, refreshToken, user } = await login(request.body);
 
 	reply.setCookie('refreshToken', refreshToken, {
 		path: '/', // cookie is valid for all routes
@@ -73,19 +73,16 @@ export const callbackController = async (request: FastifyRequest, reply: Fastify
 	}
 
 	// @ts-ignore
-	const response = await server[provider].getAccessTokenFromAuthorizationCodeFlow(request);
+	const oauthToken = await server[provider].getAccessTokenFromAuthorizationCodeFlow(request);
 
-	const refreshed = await response.refresh();
+	const user = await upsertUserWithToken(oauthToken.token, provider);
 
-	console.log({
-		expired: response.expired,
-		refreshed,
-	});
+	// create jwt
 
 	reply.send({
 		success: true,
 		data: {
-			token: response.token,
+			user,
 		},
 	});
 };

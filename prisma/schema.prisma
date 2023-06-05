@@ -33,13 +33,14 @@ model User {
   password          String?
   dateCreated       DateTime           @default(now())
   role              Role               @default(user)
+  profileImage      String?
   authProviders     AuthProvider[]
   socialConnections SocialConnection[]
 }
 
 model AuthProvider {
-  id        String           @id @default(uuid()) @db.Uuid
-  type      AuthProviderType
+  id        String           @id @unique
+  provider  AuthProviderType
   userId    String           @db.Uuid
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt

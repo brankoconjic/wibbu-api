@@ -10,7 +10,7 @@ import { API_BASE, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from './environment'
 
 const googleConfig: FastifyOAuth2Options = {
 	name: 'google',
-	scope: ['profile'],
+	scope: ['profile', 'email'],
 	credentials: {
 		auth: oauth2.GOOGLE_CONFIGURATION,
 		client: {
