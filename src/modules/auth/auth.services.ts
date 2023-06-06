@@ -91,9 +91,14 @@ export const login = async (data: LoginRequest) => {
 export const upsertUserWithToken = async (token: Token, provider: AuthProviderType) => {
 	const userData = await getUserDataFromToken(token, provider);
 	let user: User | null | undefined = null;
+	let authProvider:
+		| (AuthProvider & {
+				User: User;
+		  })
+		| null = null;
 
 	// Look for user by providerId.
-	const authProvider = await findAuthProviderById(userData.providerId);
+	authProvider = await findAuthProviderById(userData.providerId);
 	user = authProvider?.User;
 
 	// If we cannot get User through authProvider, try getting user by email.
@@ -102,11 +107,22 @@ export const upsertUserWithToken = async (token: Token, provider: AuthProviderTy
 	}
 
 	if (user) {
-		console.log('User already exists! Safe to assume that this is a successful login.');
+		console.log('User already exists! Updating...');
 
 		// Update user
-		return user;
+		await prisma.user.update({
+			where: {
+				id: user.id,
+			},
+			data: {
+				name: userData.name,
+				email: userData.email,
+				profileImage: userData.profileImage,
+			},
+		});
 	} else {
+		console.log('No user found! Creating User and AuthProvider...');
+
 		// If we cannot get User through authProvider or email, it means it's a new user so create new User and authProvider from token.
 		user = await prisma.user.create({
 			data: {
@@ -115,16 +131,26 @@ export const upsertUserWithToken = async (token: Token, provider: AuthProviderTy
 				profileImage: userData.profileImage,
 			},
 		});
-
-		// Create authProvider.
-		await prisma.authProvider.create({
-			data: {
-				id: userData.providerId,
-				userId: user.id,
-				provider,
-			},
-		});
 	}
+
+	// This will update the updatedAt field in authProvider if it exists and create AuthProvider if it doesn't exist.
+	authProvider = await prisma.authProvider.upsert({
+		where: {
+			id: userData.providerId,
+		},
+		update: {
+			updatedAt: new Date(),
+		},
+		create: {
+			id: userData.providerId,
+			userId: user.id,
+			provider,
+		},
+	});
+
+	console.log({
+		authProvider,
+	});
 
 	// Return newly created user.
 	return user;
