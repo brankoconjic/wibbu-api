@@ -19,6 +19,9 @@ export const JWT_SECRET = process.env.JWT_SECRET;
 export const CSRF_SECRET = process.env.CSRF_SECRET;
 export const PORT = process.env.PORT !== undefined ? parseInt(process.env.PORT, 10) : 3300;
 
-// Social Connections - OAuth2
+// Auth providers - OAuth2
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
+
+export const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
+export const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET;

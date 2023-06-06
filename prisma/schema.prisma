@@ -17,6 +17,7 @@ enum Role {
 
 enum AuthProviderType {
   google
+  facebook
 }
 
 enum SocialConnectionType {

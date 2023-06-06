@@ -20,5 +20,6 @@ declare module 'fastify' {
 declare module 'fastify' {
 	interface FastifyInstance {
 		google: OAuth2Namespace;
+		facebook: OAuth2Namespace;
 	}
 }

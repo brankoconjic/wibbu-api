@@ -90,37 +90,31 @@ export const login = async (data: LoginRequest) => {
  */
 export const upsertUserWithToken = async (token: Token, provider: AuthProviderType) => {
 	const userData = await getUserDataFromToken(token, provider);
-	let user: User | null | undefined = null;
+
+	let existingUser: User | null | undefined = null;
 	let authProvider: (AuthProvider & Partial<{ User: User }>) | null = null;
 
 	// Look for user by providerId.
 	authProvider = await findAuthProviderById(userData.providerId);
-	user = authProvider?.User;
+	existingUser = authProvider?.User;
 
-	// If we cannot get User through authProvider, try getting user by email.
-	if (!user && userData.email) {
-		user = await findUserByEmail(userData.email);
+	if (!existingUser && userData.email) {
+		existingUser = await findUserByEmail(userData.email);
 	}
 
-	if (user) {
-		console.log('User already exists! Updating...');
-
+	if (existingUser) {
 		// Update user
 		await prisma.user.update({
-			where: {
-				id: user.id,
-			},
+			where: { id: existingUser.id },
 			data: {
 				name: userData.name,
-				email: userData.email,
+				email: existingUser.email || userData.email,
 				profileImage: userData.profileImage,
 			},
 		});
 	} else {
-		console.log('No user found! Creating User and AuthProvider...');
-
 		// If we cannot get User through authProvider or email, it means it's a new user so create new User and authProvider from token.
-		user = await prisma.user.create({
+		existingUser = await prisma.user.create({
 			data: {
 				name: userData.name,
 				email: userData.email,
@@ -131,25 +125,20 @@ export const upsertUserWithToken = async (token: Token, provider: AuthProviderTy
 
 	// This will update the updatedAt field in authProvider if it exists and create AuthProvider if it doesn't exist.
 	authProvider = await prisma.authProvider.upsert({
-		where: {
-			id: userData.providerId,
-		},
+		where: { id: userData.providerId },
 		update: {
 			updatedAt: new Date(),
 		},
 		create: {
 			id: userData.providerId,
-			userId: user.id,
 			provider,
+			User: { connect: { id: existingUser.id } },
 		},
-	});
-
-	console.log({
-		authProvider,
+		include: { User: true },
 	});
 
 	// Return newly created user.
-	return user;
+	return authProvider.User;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -195,6 +184,15 @@ const getUserDataFromToken = async (token: Token, provider: AuthProviderType) =>
 			email: decodedProviderToken?.email_verified ? decodedProviderToken?.email : null,
 			profileImage: decodedProviderToken?.picture,
 		};
+	} else if (provider === 'facebook') {
+		const { id, name, email } = await fetchDataFromFacebook(token.access_token);
+
+		// Set user data.
+		userData = {
+			providerId: id,
+			name,
+			email,
+		};
 	}
 
 	if (!userData) {
@@ -237,4 +235,20 @@ export const findAuthProviderById = async (providerId: string) => {
 	});
 
 	return authProvider;
+};
+
+/**
+ * Fetch data from Facebook.
+ *
+ * @param accessToken - Facebook access token.
+ * @returns Facebook data.
+ */
+const fetchDataFromFacebook = async (accessToken: string) => {
+	const apiVersion = '10.0';
+	const profileDataUrl = `https://graph.facebook.com/v${apiVersion}/me?fields=name,email&access_token=${accessToken}`;
+
+	const response = await fetch(profileDataUrl);
+	const data = await response.json();
+
+	return data;
 };

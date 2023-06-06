@@ -12,7 +12,7 @@ import Fastify from 'fastify';
  */
 import { API_PREFIX, JWT_SECRET, PORT } from '@/config/environment';
 import { handleError } from '@/utils/handleErrors';
-import { socialConnections } from './config/socialConnections';
+import { authProviders } from './config/authProviders';
 import authRoutes from './modules/auth/auth.routes';
 import { authSchemas } from './modules/auth/auth.schema';
 
@@ -69,8 +69,8 @@ const start = async () => {
 		// Register routes.
 		server.register(authRoutes, { prefix: `${API_PREFIX}/auth` });
 
-		// Register OAuth2 providers.
-		for (const config of socialConnections) {
+		// Register OAuth2 auth providers.
+		for (const config of authProviders) {
 			server.register(oauth2, config);
 		}
 
