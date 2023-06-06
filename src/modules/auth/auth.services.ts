@@ -12,7 +12,7 @@ import { server } from '@/server';
 import { GoogleIdTokenType, TokenUserDataType } from '@/types/connectionTypes';
 import { generateAccessToken, generateRefreshToken, verifyPassword } from '@/utils/auth';
 import { pruneProperties } from '@/utils/misc';
-import { AuthProviderType, User } from '@prisma/client';
+import { AuthProvider, AuthProviderType, User } from '@prisma/client';
 import { LoginRequest, UserType, userSchema } from './auth.schema';
 
 /**
@@ -91,11 +91,7 @@ export const login = async (data: LoginRequest) => {
 export const upsertUserWithToken = async (token: Token, provider: AuthProviderType) => {
 	const userData = await getUserDataFromToken(token, provider);
 	let user: User | null | undefined = null;
-	let authProvider:
-		| (AuthProvider & {
-				User: User;
-		  })
-		| null = null;
+	let authProvider: (AuthProvider & Partial<{ User: User }>) | null = null;
 
 	// Look for user by providerId.
 	authProvider = await findAuthProviderById(userData.providerId);
