@@ -37,6 +37,7 @@ model User {
   profileImage      String?
   authProviders     AuthProvider[]
   socialConnections SocialConnection[]
+  PopupWidgets      PopupWidget[]
 }
 
 model AuthProvider {
@@ -54,7 +55,32 @@ model SocialConnection {
   provider     SocialConnectionType
   accessToken  String
   refreshToken String
+  expiresAt    DateTime
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
   User         User                 @relation(fields: [userId], references: [id])
+  PopupWidgets PopupWidget[]
+}
+
+model PopupWidget {
+  id                 String             @id @default(uuid()) @db.Uuid
+  name               String?
+  domain             String[]
+  apiKey             String             @unique
+  socialConnectionId String             @db.Uuid
+  SocialConnection   SocialConnection   @relation(fields: [socialConnectionId], references: [id])
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  PopupWidgetAssets  PopupWidgetAsset[]
+  userId             String             @db.Uuid
+  User               User               @relation(fields: [userId], references: [id])
+}
+
+model PopupWidgetAsset {
+  id            String      @id @default(uuid()) @db.Uuid
+  content       Json
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  popupWidgetId String      @db.Uuid
+  PopupWidget   PopupWidget @relation(fields: [popupWidgetId], references: [id])
 }
