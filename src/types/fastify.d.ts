@@ -1,14 +1,13 @@
 /**
  * External dependencies.
  */
-import { FastifyInstance as FastifyInstanceBase } from 'fastify';
 import { OAuth2Namespace } from '@fastify/oauth2';
+import { FastifyInstance as FastifyInstanceBase } from 'fastify';
 
 /**
  * Internal dependencies.
  */
 import { Role } from '@/utils/roles';
-import { ProtectedUserRequest } from '@/modules/auth/auth.schema';
 
 declare module 'fastify' {
 	interface FastifyInstance extends FastifyInstanceBase {

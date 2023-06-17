@@ -11,13 +11,20 @@ import WibbuException from '@/exceptions/WibbuException';
 import { server } from '@/server';
 import { isDev } from '@/utils/misc';
 import { AuthProviderType } from '@prisma/client';
-import { LoginRequest, authProvidersSchema } from './auth.schema';
-import { login, upsertUserWithToken } from './auth.services';
+import {
+	LoginRequest,
+	RegisterRequest,
+	authProvidersSchema,
+} from './auth.schema';
+import { login, register, upsertUserWithToken } from './auth.services';
 
 /**
  * Login controller.
  */
-export const loginController = async (request: FastifyRequest<{ Body: LoginRequest }>, reply: FastifyReply) => {
+export const loginController = async (
+	request: FastifyRequest<{ Body: LoginRequest }>,
+	reply: FastifyReply
+) => {
 	const { accessToken, refreshToken, user } = await login(request.body);
 
 	reply.setCookie('refreshToken', refreshToken, {
@@ -37,9 +44,40 @@ export const loginController = async (request: FastifyRequest<{ Body: LoginReque
 };
 
 /**
+ * Register controller.
+ */
+export const registerController = async (
+	request: FastifyRequest<{
+		Body: RegisterRequest;
+	}>,
+	reply: FastifyReply
+) => {
+	const { accessToken, refreshToken, user } = await register(request.body);
+
+	// Let's login the user.
+	reply.setCookie('refreshToken', refreshToken, {
+		path: '/', // cookie is valid for all routes
+		httpOnly: true, // client JS cannot access the cookie
+		sameSite: 'strict', // cookie cannot be sent with cross-origin requests
+		secure: !isDev(), // send cookie over https only if not in development
+	});
+
+	reply.status(200).send({
+		success: true,
+		data: {
+			accessToken,
+			user,
+		},
+	});
+};
+
+/**
  * Connect controller.
  */
-export const connectController = async (request: FastifyRequest, reply: FastifyReply) => {
+export const loginConnectController = async (
+	request: FastifyRequest,
+	reply: FastifyReply
+) => {
 	const { provider } = request.params as { provider: AuthProviderType };
 
 	// Check if provider exists.
@@ -54,11 +92,15 @@ export const connectController = async (request: FastifyRequest, reply: FastifyR
 	}
 
 	// @ts-ignore
-	const redirectUri: string = server[provider].generateAuthorizationUri(request);
+	const redirectUri: string =
+		server[provider].generateAuthorizationUri(request);
 	reply.redirect(redirectUri);
 };
 
-export const callbackController = async (request: FastifyRequest, reply: FastifyReply) => {
+export const loginCallbackController = async (
+	request: FastifyRequest,
+	reply: FastifyReply
+) => {
 	const { provider } = request.params as { provider: AuthProviderType };
 
 	// Check if provider exists.
@@ -73,8 +115,11 @@ export const callbackController = async (request: FastifyRequest, reply: Fastify
 	}
 
 	// @ts-ignore
-	const oauthToken = await server[provider].getAccessTokenFromAuthorizationCodeFlow(request);
+	const oauthToken = await server[
+		provider
+	].getAccessTokenFromAuthorizationCodeFlow(request);
 
+	// Create or update user.
 	const user = await upsertUserWithToken(oauthToken.token, provider);
 
 	// create jwt

@@ -10,7 +10,12 @@ import { FastifyRequest } from 'fastify/types/request';
  */
 import WibbuException from '@/exceptions/WibbuException';
 import { $ref } from '@/modules/auth/auth.schema';
-import { callbackController, connectController, loginController } from './auth.controllers';
+import {
+	loginCallbackController,
+	loginConnectController,
+	loginController,
+	registerController,
+} from './auth.controllers';
 
 const authRoutes = async (server: FastifyInstance) => {
 	/**
@@ -22,12 +27,22 @@ const authRoutes = async (server: FastifyInstance) => {
 			schema: {
 				body: $ref('loginRequestSchema'),
 				response: {
-					200: $ref('loginResponseSchema'),
+					200: $ref('loginRegisterResponseSchema'),
 				},
 			},
 		},
 		loginController
 	);
+
+	/**
+	 * @route GET /connect/:provider - Create OAuth redirection link for the specified provider.
+	 */
+	server.get('/connect/:provider', loginConnectController);
+
+	/**
+	 * @route GET /callback/:provider - Callback for OAuth redirection.
+	 */
+	server.get('/callback/:provider', loginCallbackController);
 
 	/**
 	 * @route POST /logout - Logout user.
@@ -37,6 +52,7 @@ const authRoutes = async (server: FastifyInstance) => {
 			reply.send({
 				test: request.query,
 			});
+
 			throw new WibbuException({
 				code: 'BAD_REQUEST',
 				message: 'Invalid body',
@@ -49,14 +65,20 @@ const authRoutes = async (server: FastifyInstance) => {
 	});
 
 	/**
-	 * @route GET /connect/:provider - Create OAuth redirection link for the specified provider.
+	 * @route POST /register - Register user.
 	 */
-	server.get('/connect/:provider', connectController);
-
-	/**
-	 * @route GET /callback/:provider - Callback for OAuth redirection.
-	 */
-	server.get('/callback/:provider', callbackController);
+	server.post(
+		'/register',
+		{
+			schema: {
+				body: $ref('registerRequestSchema'),
+				response: {
+					200: $ref('loginRegisterResponseSchema'),
+				},
+			},
+		},
+		registerController
+	);
 };
 
 export default authRoutes;

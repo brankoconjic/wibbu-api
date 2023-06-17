@@ -10,76 +10,103 @@ import prisma from '@/config/database';
 import WibbuException from '@/exceptions/WibbuException';
 import { server } from '@/server';
 import { GoogleIdTokenType, TokenUserDataType } from '@/types/connectionTypes';
-import { generateAccessToken, generateRefreshToken, verifyPassword } from '@/utils/auth';
+import {
+	generateAccessToken,
+	generateRefreshToken,
+	verifyPassword,
+} from '@/utils/auth';
 import { pruneProperties } from '@/utils/misc';
 import { AuthProvider, AuthProviderType, User } from '@prisma/client';
-import { LoginRequest, UserType, userSchema } from './auth.schema';
+import {
+	LoginRequest,
+	RegisterRequest,
+	UserType,
+	userSchema,
+} from './auth.schema';
 
 /**
- * Login user with username or oauth.
+ * Login user with email/password.
  */
 export const login = async (data: LoginRequest) => {
-	if (data.type === 'password') {
-		// Find user by email.
-		const user = await findUserByEmail(data.email);
+	// Find user by email.
+	const user = await findUserByEmail(data.email);
 
-		if (!user) {
-			throw new WibbuException({
-				code: 'INVALID_CREDENTIALS',
-				message: 'Invalid credentials',
-				statusCode: 401,
-			});
-		}
-
-		// Check if user has password, if not, it is an oauth user.
-		if (!user.password) {
-			throw new WibbuException({
-				code: 'OAUTH_ONLY',
-				message: 'User logged in with OAuth only',
-				statusCode: 401,
-			});
-		}
-
-		// Validate password.
-		const isPasswordValid = await verifyPassword(data.password, user.password);
-
-		if (!isPasswordValid) {
-			throw new WibbuException({
-				code: 'INVALID_CREDENTIALS',
-				message: 'Invalid credentials',
-				statusCode: 401,
-			});
-		}
-
-		// Remove sensitive information, such as password.
-		const schemaKeys = Object.keys(userSchema.shape) as (keyof UserType)[];
-		const prunedUser = pruneProperties(user, schemaKeys);
-
-		// Generate tokens
-		const accessToken = generateAccessToken(prunedUser);
-		const refreshToken = generateRefreshToken(prunedUser.id);
-
-		return { accessToken, refreshToken, user: prunedUser };
-	} else if (data.type === 'oauth') {
-		/* {token} is JWT encoded with id, email, name accessToken and refreshToken */
-		// find user by email, if email exists update user with new login data (oAuth)
-		// find user by id if email does not exist
-		// if user exists, update user with new data
-
-		// if user does not exist, create user with data
-
-		return {
-			user: 'bla',
-			refreshToken: '1231',
-			accessToken: '123',
-		};
-	} else {
+	if (!user) {
 		throw new WibbuException({
-			message: 'Invalid payload',
-			code: 'BAD_REQUEST',
-			statusCode: 400,
+			code: 'INVALID_CREDENTIALS',
+			message: 'Invalid credentials',
+			statusCode: 401,
 		});
 	}
+
+	// Check if user has password, if not, it is an oauth user.
+	if (!user.password) {
+		throw new WibbuException({
+			code: 'OAUTH_ONLY',
+			message: 'User logged in with OAuth only',
+			statusCode: 401,
+		});
+	}
+
+	// Validate password.
+	const isPasswordValid = await verifyPassword(data.password, user.password);
+
+	if (!isPasswordValid) {
+		throw new WibbuException({
+			code: 'INVALID_CREDENTIALS',
+			message: 'Invalid credentials',
+			statusCode: 401,
+		});
+	}
+
+	// Remove sensitive information, such as password.
+	const schemaKeys = Object.keys(userSchema.shape) as (keyof UserType)[];
+	const prunedUser = pruneProperties(user, schemaKeys);
+
+	// Generate tokens
+	const accessToken = generateAccessToken(prunedUser);
+	const refreshToken = generateRefreshToken(prunedUser.id);
+
+	return { accessToken, refreshToken, user: prunedUser };
+};
+
+/**
+ * Register user with email/password
+ */
+export const register = async (data: RegisterRequest) => {
+	// Check if user with that email already exists.
+	let user = await findUserByEmail(data.email);
+
+	if (user) {
+		throw new WibbuException({
+			code: 'EMAIL_IN_USE',
+			message: 'That email is already in use',
+			statusCode: 401,
+		});
+	}
+
+	// Proceed to create a new user.
+
+	// @TODO - bcrypt password
+	const hashedPassword = data.password;
+
+	user = await prisma.user.create({
+		data: {
+			name: data.name,
+			email: data.email,
+			password: hashedPassword,
+		},
+	});
+
+	// Remove sensitive information, such as password.
+	const schemaKeys = Object.keys(userSchema.shape) as (keyof UserType)[];
+	const prunedUser = pruneProperties(user, schemaKeys);
+
+	// Generate tokens so we can login the user immediatelly.
+	const accessToken = generateAccessToken(prunedUser);
+	const refreshToken = generateRefreshToken(prunedUser.id);
+
+	return { accessToken, refreshToken, user: prunedUser };
 };
 
 /**
@@ -88,7 +115,10 @@ export const login = async (data: LoginRequest) => {
  * @param token - Access token containing information from the user.
  * @returns User object.
  */
-export const upsertUserWithToken = async (token: Token, provider: AuthProviderType) => {
+export const upsertUserWithToken = async (
+	token: Token,
+	provider: AuthProviderType
+) => {
 	const userData = await getUserDataFromToken(token, provider);
 
 	let existingUser: User | null | undefined = null;
@@ -152,7 +182,10 @@ export const upsertUserWithToken = async (token: Token, provider: AuthProviderTy
  * @param provider - Auth provider.
  * @returns User data.
  */
-const getUserDataFromToken = async (token: Token, provider: AuthProviderType) => {
+const getUserDataFromToken = async (
+	token: Token,
+	provider: AuthProviderType
+) => {
 	let userData: TokenUserDataType | null = null;
 
 	// Google
@@ -181,7 +214,9 @@ const getUserDataFromToken = async (token: Token, provider: AuthProviderType) =>
 		userData = {
 			providerId: decodedProviderToken?.sub,
 			name: decodedProviderToken?.name,
-			email: decodedProviderToken?.email_verified ? decodedProviderToken?.email : null,
+			email: decodedProviderToken?.email_verified
+				? decodedProviderToken?.email
+				: null,
 			profileImage: decodedProviderToken?.picture,
 		};
 	} else if (provider === 'facebook') {
