@@ -10,12 +10,7 @@ import { FastifyRequest } from 'fastify/types/request';
  */
 import WibbuException from '@/exceptions/WibbuException';
 import { $ref } from '@/modules/auth/auth.schema';
-import {
-	loginCallbackController,
-	loginConnectController,
-	loginController,
-	registerController,
-} from './auth.controllers';
+import { loginCallbackController, loginConnectController, loginController, refreshController, registerController } from './auth.controllers';
 
 const authRoutes = async (server: FastifyInstance) => {
 	/**
@@ -79,6 +74,12 @@ const authRoutes = async (server: FastifyInstance) => {
 		},
 		registerController
 	);
+
+	/**
+	 * @route POST /refresh-token - Refresh access token.
+	 * @description Refresh tokens using refresh token.
+	 */
+	server.post('/refresh-token', refreshController);
 };
 
 export default authRoutes;

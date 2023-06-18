@@ -2,6 +2,7 @@
  * External dependencies.
  */
 import { Token } from '@fastify/oauth2';
+import bcrypt from 'bcrypt';
 
 /**
  * Internal dependencies.
@@ -10,19 +11,9 @@ import prisma from '@/config/database';
 import WibbuException from '@/exceptions/WibbuException';
 import { server } from '@/server';
 import { GoogleIdTokenType, TokenUserDataType } from '@/types/connectionTypes';
-import {
-	generateAccessToken,
-	generateRefreshToken,
-	verifyPassword,
-} from '@/utils/auth';
-import { pruneProperties } from '@/utils/misc';
+import { generateTokens, verifyPassword } from '@/utils/auth';
 import { AuthProvider, AuthProviderType, User } from '@prisma/client';
-import {
-	LoginRequest,
-	RegisterRequest,
-	UserType,
-	userSchema,
-} from './auth.schema';
+import { LoginRequest, RegisterRequest } from './auth.schema';
 
 /**
  * Login user with email/password.
@@ -59,15 +50,11 @@ export const login = async (data: LoginRequest) => {
 		});
 	}
 
-	// Remove sensitive information, such as password.
-	const schemaKeys = Object.keys(userSchema.shape) as (keyof UserType)[];
-	const prunedUser = pruneProperties(user, schemaKeys);
-
 	// Generate tokens
-	const accessToken = generateAccessToken(prunedUser);
-	const refreshToken = generateRefreshToken(prunedUser.id);
+	const { accessToken, refreshToken } = generateTokens(user);
 
-	return { accessToken, refreshToken, user: prunedUser };
+	// Return user and tokens.
+	return { accessToken, refreshToken, user };
 };
 
 /**
@@ -86,9 +73,7 @@ export const register = async (data: RegisterRequest) => {
 	}
 
 	// Proceed to create a new user.
-
-	// @TODO - bcrypt password
-	const hashedPassword = data.password;
+	const hashedPassword = await bcrypt.hash(data.password, 10);
 
 	user = await prisma.user.create({
 		data: {
@@ -98,27 +83,20 @@ export const register = async (data: RegisterRequest) => {
 		},
 	});
 
-	// Remove sensitive information, such as password.
-	const schemaKeys = Object.keys(userSchema.shape) as (keyof UserType)[];
-	const prunedUser = pruneProperties(user, schemaKeys);
-
 	// Generate tokens so we can login the user immediatelly.
-	const accessToken = generateAccessToken(prunedUser);
-	const refreshToken = generateRefreshToken(prunedUser.id);
+	const { accessToken, refreshToken } = generateTokens(user);
 
-	return { accessToken, refreshToken, user: prunedUser };
+	// Return user and tokens.
+	return { accessToken, refreshToken, user };
 };
 
 /**
- * Update or create user with token. Used for both login and signup.
+ * Update or create user with token (OAuth2). Used for both login and signup.
  *
  * @param token - Access token containing information from the user.
  * @returns User object.
  */
-export const upsertUserWithToken = async (
-	token: Token,
-	provider: AuthProviderType
-) => {
+export const upsertUserWithToken = async (token: Token, provider: AuthProviderType) => {
 	const userData = await getUserDataFromToken(token, provider);
 
 	let existingUser: User | null | undefined = null;
@@ -182,10 +160,7 @@ export const upsertUserWithToken = async (
  * @param provider - Auth provider.
  * @returns User data.
  */
-const getUserDataFromToken = async (
-	token: Token,
-	provider: AuthProviderType
-) => {
+const getUserDataFromToken = async (token: Token, provider: AuthProviderType) => {
 	let userData: TokenUserDataType | null = null;
 
 	// Google
@@ -214,9 +189,7 @@ const getUserDataFromToken = async (
 		userData = {
 			providerId: decodedProviderToken?.sub,
 			name: decodedProviderToken?.name,
-			email: decodedProviderToken?.email_verified
-				? decodedProviderToken?.email
-				: null,
+			email: decodedProviderToken?.email_verified ? decodedProviderToken?.email : null,
 			profileImage: decodedProviderToken?.picture,
 		};
 	} else if (provider === 'facebook') {
@@ -248,13 +221,25 @@ const getUserDataFromToken = async (
  * @returns User object or null if not found.
  */
 export const findUserByEmail = async (email: string) => {
-	const foundUser = await prisma.user.findUnique({
+	return await prisma.user.findUnique({
 		where: {
 			email,
 		},
 	});
+};
 
-	return foundUser;
+/**
+ * Find user by id.
+ *
+ * @param id - User id.
+ * @returns User object or null if not found.
+ */
+export const findUserById = async (id: string) => {
+	return await prisma.user.findUnique({
+		where: {
+			id,
+		},
+	});
 };
 
 /**

@@ -18,7 +18,7 @@ export const userSchema = z.object({
 	name: z.string(),
 	email: z.string().email().nullish(),
 	password: z.string().min(8),
-	profilePicture: z.string().url().nullish(),
+	profileImage: z.string().url().nullish(),
 	role: roleEnum,
 });
 
@@ -44,8 +44,15 @@ export const registerRequestSchema = loginRequestSchema.extend({
 	name: z.string(),
 });
 
+export const JWTPayloadSchema = z.object({
+	sub: z.string().uuid(),
+	iat: z.number(),
+	exp: z.number(),
+});
+
 /* ---------------------------------- Types --------------------------------- */
 export type UserType = z.infer<typeof userSchema>;
+export type JWTPayloadType = z.infer<typeof JWTPayloadSchema>;
 
 export type LoginType = z.infer<typeof loginEnum>;
 export type RoleType = z.infer<typeof roleEnum>;

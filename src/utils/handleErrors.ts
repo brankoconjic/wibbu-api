@@ -13,7 +13,7 @@ const DEFAULT_ERROR_MESSAGE = 'An unexpected error occurred.' as const;
 
 type ErrorResponseType = {
 	message: string;
-	code: string | 'UNKNOWN_ERROR' | 'INTERNAL_SERVER_ERROR' | 'DUPLICATE_ERROR';
+	code: string | 'API_ERROR' | 'DUPLICATE_ERROR';
 };
 
 type ReturnErrorType = {
@@ -34,7 +34,7 @@ export const handleError = (error: Prisma.PrismaClientKnownRequestError | Fastif
 		success: false,
 		error: {
 			message: DEFAULT_ERROR_MESSAGE,
-			code: 'INTERNAL_SERVER_ERROR',
+			code: 'API_ERROR',
 		},
 	};
 
