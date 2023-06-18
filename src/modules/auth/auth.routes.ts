@@ -9,7 +9,7 @@ import { FastifyRequest } from 'fastify/types/request';
  * Internal dependencies.
  */
 import WibbuException from '@/exceptions/WibbuException';
-import { $ref } from '@/modules/auth/auth.schema';
+import { $ref } from '@/utils/buildFastifySchemas';
 import { loginCallbackController, loginConnectController, loginController, refreshController, registerController } from './auth.controllers';
 
 const authRoutes = async (server: FastifyInstance) => {
@@ -43,14 +43,10 @@ const authRoutes = async (server: FastifyInstance) => {
 	 * @route POST /logout - Logout user.
 	 */
 	server.post('/logout', (request: FastifyRequest, reply: FastifyReply) => {
-		if (request.body) {
-			reply.send({
-				test: request.query,
-			});
-
+		if ((request.body && Object.keys(request.body).length !== 0) || (request.query && Object.keys(request.query).length !== 0)) {
 			throw new WibbuException({
 				code: 'BAD_REQUEST',
-				message: 'Invalid body',
+				message: 'Bad request',
 				statusCode: 400,
 			});
 		}

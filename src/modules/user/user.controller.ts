@@ -9,9 +9,8 @@ import { FastifyRequest } from 'fastify/types/request';
  */
 import { updateUser } from './user.services';
 
-export const updateController = async (
-	request: FastifyRequest,
-	reply: FastifyReply
-) => {
+export const updateController = async (request: FastifyRequest, reply: FastifyReply) => {
 	const updatedUser = await updateUser();
+
+	reply.send('User updated successfully!');
 };

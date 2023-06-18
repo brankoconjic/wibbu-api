@@ -6,12 +6,12 @@ import { FastifyInstance } from 'fastify/types/instance';
 /**
  * Internal dependencies.
  */
-import { $ref } from './user.schema';
+import { $ref } from '@/utils/buildFastifySchemas';
 import { updateController } from './user.controller';
 
 const userRoutes = async (server: FastifyInstance) => {
 	/**
-	 * @route POST /login - Login user.
+	 * @route PATCH /update - Login user.
 	 */
 	server.patch(
 		'/update',

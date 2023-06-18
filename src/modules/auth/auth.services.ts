@@ -13,7 +13,8 @@ import { server } from '@/server';
 import { GoogleIdTokenType, TokenUserDataType } from '@/types/connectionTypes';
 import { generateTokens, verifyPassword } from '@/utils/auth';
 import { AuthProvider, AuthProviderType, User } from '@prisma/client';
-import { LoginRequest, RegisterRequest } from './auth.schema';
+import { FastifyRequest } from 'fastify/types/request';
+import { JWTPayloadType, LoginRequest, RegisterRequest } from './auth.schema';
 
 /**
  * Login user with email/password.
@@ -88,6 +89,41 @@ export const register = async (data: RegisterRequest) => {
 
 	// Return user and tokens.
 	return { accessToken, refreshToken, user };
+};
+
+/**
+ * Refresh accessToken and refreshToken using refreshToken.
+ *
+ * @param request - Fastify request.
+ * @returns new accessToken and refreshToken.
+ */
+export const refreshTokens = async (request: FastifyRequest) => {
+	if ((request.body && Object.keys(request.body).length !== 0) || (request.query && Object.keys(request.query).length !== 0)) {
+		throw new WibbuException({
+			code: 'BAD_REQUEST',
+			message: 'Bad request',
+			statusCode: 400,
+		});
+	}
+
+	// Verify refresh token.
+	await request.jwtVerify();
+
+	// At this point we have user data in request.user.
+	const { sub } = request.user as JWTPayloadType;
+	const user = await findUserById(sub);
+
+	if (!user) {
+		throw new WibbuException({
+			code: 'UNAUTHORIZED',
+			message: 'User not found',
+			statusCode: 401,
+		});
+	}
+
+	const { accessToken, refreshToken } = generateTokens(user);
+
+	return { accessToken, refreshToken };
 };
 
 /**

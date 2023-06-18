@@ -9,11 +9,10 @@ import { FastifyRequest } from 'fastify/types/request';
  */
 import WibbuException from '@/exceptions/WibbuException';
 import { server } from '@/server';
-import { generateTokens } from '@/utils/auth';
 import { isDev } from '@/utils/misc';
 import { AuthProviderType } from '@prisma/client';
-import { JWTPayloadType, LoginRequest, RegisterRequest, authProvidersSchema } from './auth.schema';
-import { findUserById, login, register, upsertUserWithToken } from './auth.services';
+import { LoginRequest, RegisterRequest, authProvidersSchema } from './auth.schema';
+import { login, refreshTokens, register, upsertUserWithToken } from './auth.services';
 
 /**
  * Login controller.
@@ -69,31 +68,8 @@ export const registerController = async (
  * Refresh token controller.
  */
 export const refreshController = async (request: FastifyRequest, reply: FastifyReply) => {
-	if ((request.body && Object.keys(request.body).length !== 0) || (request.query && Object.keys(request.query).length !== 0)) {
-		throw new WibbuException({
-			code: 'BAD_REQUEST',
-			message: 'Bad request',
-			statusCode: 400,
-		});
-	}
-
-	// Verify refresh token.
-	await request.jwtVerify();
-
-	// At this point we have user data in request.user.
-	const { sub } = request.user as JWTPayloadType;
-	const user = await findUserById(sub);
-
-	if (!user) {
-		throw new WibbuException({
-			code: 'UNAUTHORIZED',
-			message: 'User not found',
-			statusCode: 401,
-		});
-	}
-
 	// Generate new access token and refresh token.
-	const { accessToken, refreshToken } = generateTokens(user);
+	const { accessToken, refreshToken } = await refreshTokens(request);
 
 	// Set refresh token in cookie.
 	reply.setCookie('refreshToken', refreshToken, {

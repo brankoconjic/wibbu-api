@@ -61,10 +61,3 @@ export type LoginRequest = z.infer<typeof loginRequestSchema>;
 export type LoginRegisterResponse = z.infer<typeof loginRegisterResponseSchema>;
 
 export type RegisterRequest = z.infer<typeof registerRequestSchema>;
-
-/* --------------------- Build and add schemas to server -------------------- */
-export const { schemas: authSchemas, $ref } = buildJsonSchemas({
-	loginRequestSchema: loginRequestSchema,
-	loginRegisterResponseSchema: loginRegisterResponseSchema,
-	registerRequestSchema: registerRequestSchema,
-});

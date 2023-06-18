@@ -14,13 +14,17 @@ import { API_PREFIX, JWT_SECRET, PORT } from '@/config/environment';
 import { handleError } from '@/utils/handleErrors';
 import { authProviders } from './config/authProviders';
 import authRoutes from './modules/auth/auth.routes';
-import { authSchemas } from './modules/auth/auth.schema';
+import userRoutes from './modules/user/user.routes';
+import { fastifySchemas } from './utils/buildFastifySchemas';
 
 const logger =
 	process.env.NODE_ENV === 'development'
 		? {
 				transport: {
 					target: 'pino-pretty',
+					options: {
+						levelFirst: true,
+					},
 				},
 		  }
 		: false;
@@ -62,12 +66,13 @@ const start = async () => {
 		});
 
 		// Add schemas to server.
-		for (const schema of authSchemas) {
+		for (const schema of fastifySchemas) {
 			server.addSchema(schema);
 		}
 
 		// Register routes.
 		server.register(authRoutes, { prefix: `${API_PREFIX}/auth` });
+		server.register(userRoutes, { prefix: `${API_PREFIX}/user` });
 
 		// Register OAuth2 auth providers.
 		for (const config of authProviders) {
