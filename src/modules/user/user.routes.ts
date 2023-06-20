@@ -11,13 +11,13 @@ import { updateController } from './user.controller';
 
 const userRoutes = async (server: FastifyInstance) => {
 	/**
-	 * @route PATCH /update - Login user.
+	 * @route PATCH /update - Update user profile details.
 	 */
 	server.patch(
 		'/update',
 		{
+			preHandler: server.authorize(),
 			schema: {
-				body: $ref('updateRequestSchema'),
 				response: {
 					200: $ref('updateResponseSchema'),
 				},

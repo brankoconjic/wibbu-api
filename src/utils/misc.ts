@@ -1,4 +1,4 @@
-import { ZodAny, ZodObject, ZodRawShape } from 'zod';
+import WibbuException from '@/exceptions/WibbuException';
 
 /**
  * Check if the current environment is development.
@@ -15,12 +15,12 @@ export const isDev = (): boolean => process.env.NODE_ENV === 'development';
  * @returns {Partial<T>} Pruned data object.
  */
 
-export const pruneProperties = <T>(data: Record<string, any>, keysToKeep: (keyof T)[]): Partial<T> => {
+export const pruneProperties = <T>(data: T, keysToExclude: (keyof T)[]): Partial<T> => {
 	const prunedData = {} as Partial<T>;
 
-	for (const key of keysToKeep) {
-		if (key in data) {
-			prunedData[key] = data[key as keyof typeof data];
+	for (const key in data) {
+		if (!keysToExclude.includes(key as keyof T)) {
+			prunedData[key as keyof T] = data[key as keyof typeof data];
 		}
 	}
 

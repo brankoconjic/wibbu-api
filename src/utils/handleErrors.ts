@@ -17,7 +17,7 @@ type ErrorResponseType = {
 };
 
 type ReturnErrorType = {
-	success: false;
+	success: boolean;
 	error: ErrorResponseType;
 };
 
@@ -31,7 +31,8 @@ type ReturnErrorType = {
  */
 export const handleError = (error: Prisma.PrismaClientKnownRequestError | FastifyError | Error, request: FastifyRequest, reply: FastifyReply) => {
 	let errObj: ReturnErrorType = {
-		success: false,
+		// @ts-ignore
+		success: error?.statusCode ? (error.statusCode === 200 ? true : false) : false,
 		error: {
 			message: DEFAULT_ERROR_MESSAGE,
 			code: 'API_ERROR',

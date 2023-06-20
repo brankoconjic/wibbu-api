@@ -8,11 +8,13 @@ import { FastifyRequest } from 'fastify/types/request';
  * Internal dependencies.
  */
 import WibbuException from '@/exceptions/WibbuException';
+import { EMAIL_ALREADY_VERIFIED_EXCEPTION } from '@/exceptions/exceptions';
 import { server } from '@/server';
-import { isDev } from '@/utils/misc';
-import { AuthProviderType } from '@prisma/client';
+import { generateTokens } from '@/utils/auth';
+import { isDev, pruneProperties } from '@/utils/misc';
+import { AuthProviderType, User } from '@prisma/client';
 import { LoginRequest, RegisterRequest, authProvidersSchema } from './auth.schema';
-import { login, refreshTokens, register, upsertUserWithToken } from './auth.services';
+import { createEmailVerificationRecord, login, refreshTokens, register, upsertUserWithToken, verifyEmail } from './auth.services';
 
 /**
  * Login controller.
@@ -55,7 +57,7 @@ export const registerController = async (
 		secure: !isDev(), // send cookie over https only if not in development
 	});
 
-	reply.status(200).send({
+	reply.status(201).send({
 		success: true,
 		data: {
 			accessToken,
@@ -127,18 +129,60 @@ export const loginCallbackController = async (request: FastifyRequest, reply: Fa
 		});
 	}
 
-	// @ts-ignore
 	const oauthToken = await server[provider].getAccessTokenFromAuthorizationCodeFlow(request);
 
 	// Create or update user.
 	const user = await upsertUserWithToken(oauthToken.token, provider);
 
-	// create jwt
+	// Prune password from user.
+	const prunedUser = pruneProperties<User>(user!, ['password']) as User;
 
+	// Generate tokens so we can login the user.
+	const { accessToken, refreshToken } = generateTokens(prunedUser);
+
+	// Set refresh token in secure cookie.
+	reply.setCookie('refreshToken', refreshToken, {
+		path: '/', // cookie is valid for all routes
+		httpOnly: true, // client JS cannot access the cookie
+		sameSite: 'strict', // cookie cannot be sent with cross-origin requests
+		secure: !isDev(), // send cookie over https only if not in development
+	});
+
+	// Send response.
 	reply.send({
 		success: true,
 		data: {
+			accessToken,
 			user,
 		},
 	});
+};
+
+/**
+ * Verify email controller.
+ */
+export const verifyEmailController = async (request: FastifyRequest<{ Params: { code: string } }>, reply: FastifyReply) => {
+	const { code } = request.params;
+	const { id } = request.user;
+
+	if (request.user.emailVerified) {
+		throw new WibbuException(EMAIL_ALREADY_VERIFIED_EXCEPTION);
+	}
+
+	await verifyEmail(parseInt(code), id);
+	reply.send({ success: true });
+};
+
+/**
+ * Resend verification controller.
+ */
+export const resendVerificationController = async (request: FastifyRequest, reply: FastifyReply) => {
+	const { id } = request.user;
+
+	if (request.user.emailVerified) {
+		throw new WibbuException(EMAIL_ALREADY_VERIFIED_EXCEPTION);
+	}
+
+	await createEmailVerificationRecord(id);
+	reply.send({ success: true });
 };

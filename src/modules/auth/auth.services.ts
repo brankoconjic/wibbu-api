@@ -3,18 +3,20 @@
  */
 import { Token } from '@fastify/oauth2';
 import bcrypt from 'bcrypt';
+import { FastifyRequest } from 'fastify/types/request';
 
 /**
  * Internal dependencies.
  */
 import prisma from '@/config/database';
 import WibbuException from '@/exceptions/WibbuException';
+import { INVALID_VERIFICATION_CODE, UNAUTHORIZED_EXCEPTION } from '@/exceptions/exceptions';
 import { server } from '@/server';
 import { GoogleIdTokenType, TokenUserDataType } from '@/types/connectionTypes';
-import { generateTokens, verifyPassword } from '@/utils/auth';
+import { generateTokens, generateVerificationCode, getUserIdFromRefreshToken, verifyPassword } from '@/utils/auth';
+import { pruneProperties } from '@/utils/misc';
 import { AuthProvider, AuthProviderType, User } from '@prisma/client';
-import { FastifyRequest } from 'fastify/types/request';
-import { JWTPayloadType, LoginRequest, RegisterRequest } from './auth.schema';
+import { LoginRequest, RegisterRequest } from './auth.schema';
 
 /**
  * Login user with email/password.
@@ -51,8 +53,11 @@ export const login = async (data: LoginRequest) => {
 		});
 	}
 
+	// Prune password from user.
+	const prunedUser = pruneProperties<User>(user, ['password']) as User;
+
 	// Generate tokens
-	const { accessToken, refreshToken } = generateTokens(user);
+	const { accessToken, refreshToken } = generateTokens(prunedUser);
 
 	// Return user and tokens.
 	return { accessToken, refreshToken, user };
@@ -84,8 +89,14 @@ export const register = async (data: RegisterRequest) => {
 		},
 	});
 
-	// Generate tokens so we can login the user immediatelly.
-	const { accessToken, refreshToken } = generateTokens(user);
+	// Create email verification record.
+	await createEmailVerificationRecord(user.id);
+
+	// Prune password from user.
+	const prunedUser = pruneProperties<User>(user, ['password']) as User;
+
+	// Generate tokens so we can login the user.
+	const { accessToken, refreshToken } = generateTokens(prunedUser);
 
 	// Return user and tokens.
 	return { accessToken, refreshToken, user };
@@ -98,30 +109,32 @@ export const register = async (data: RegisterRequest) => {
  * @returns new accessToken and refreshToken.
  */
 export const refreshTokens = async (request: FastifyRequest) => {
-	if ((request.body && Object.keys(request.body).length !== 0) || (request.query && Object.keys(request.query).length !== 0)) {
-		throw new WibbuException({
-			code: 'BAD_REQUEST',
-			message: 'Bad request',
-			statusCode: 400,
-		});
+	// Get refreshToken from cookie.
+	const refToken = request.cookies?.refreshToken;
+
+	// Check if refreshToken exists.
+	if (!refToken) {
+		throw new WibbuException(UNAUTHORIZED_EXCEPTION);
 	}
 
-	// Verify refresh token.
-	await request.jwtVerify();
+	// Obtain user from refreshToken.
+	const userId = getUserIdFromRefreshToken(refToken);
 
-	// At this point we have user data in request.user.
-	const { sub } = request.user as JWTPayloadType;
-	const user = await findUserById(sub);
+	if (!userId) {
+		throw new WibbuException(UNAUTHORIZED_EXCEPTION);
+	}
+
+	const user = await findUserById(userId);
 
 	if (!user) {
-		throw new WibbuException({
-			code: 'UNAUTHORIZED',
-			message: 'User not found',
-			statusCode: 401,
-		});
+		throw new WibbuException(UNAUTHORIZED_EXCEPTION);
 	}
 
-	const { accessToken, refreshToken } = generateTokens(user);
+	// Prune password from user.
+	const prunedUser = pruneProperties<User>(user, ['password']) as User;
+
+	// Generate tokens
+	const { accessToken, refreshToken } = generateTokens(prunedUser);
 
 	return { accessToken, refreshToken };
 };
@@ -154,14 +167,19 @@ export const upsertUserWithToken = async (token: Token, provider: AuthProviderTy
 				name: userData.name,
 				email: existingUser.email || userData.email,
 				profileImage: userData.profileImage,
+				emailVerified: true,
 			},
 		});
+
+		// Delete all related EmailVerification records
+		await prisma.emailVerification.deleteMany({ where: { userId: existingUser.id } });
 	} else {
 		// If we cannot get User through authProvider or email, it means it's a new user so create new User and authProvider from token.
 		existingUser = await prisma.user.create({
 			data: {
 				name: userData.name,
 				email: userData.email,
+				emailVerified: true,
 				profileImage: userData.profileImage,
 			},
 		});
@@ -183,6 +201,42 @@ export const upsertUserWithToken = async (token: Token, provider: AuthProviderTy
 
 	// Return newly created user.
 	return authProvider.User;
+};
+
+/**
+ * Endpoint service to handle user email verification.
+ *
+ * @param code - Email verification JWT token containing user ID and token identifier.
+ */
+export const verifyEmail = async (code: number, userId: string) => {
+	// Get the email verification record
+	const emailVerification = await prisma.emailVerification.findUnique({
+		where: { userId },
+	});
+
+	if (!emailVerification || emailVerification.code !== code) {
+		throw new WibbuException(INVALID_VERIFICATION_CODE);
+	}
+
+	// Check if the code has expired
+	if (emailVerification.expiration.getTime() < new Date().getTime()) {
+		throw new WibbuException({
+			code: 'EXPIRED_CODE',
+			message: 'Verification code expired',
+			statusCode: 401,
+		});
+	}
+
+	// Delete the email verification record.
+	await prisma.emailVerification.delete({
+		where: { userId },
+	});
+
+	// Set emailVerified to true.
+	await prisma.user.update({
+		where: { id: userId },
+		data: { emailVerified: true },
+	});
 };
 
 /* -------------------------------------------------------------------------- */
@@ -291,6 +345,61 @@ export const findAuthProviderById = async (providerId: string) => {
 	});
 
 	return authProvider;
+};
+
+/**
+ * Get user email by id.
+ *
+ * @param userId - User id.
+ * @returns User email or null if not found.
+ */
+export const getUserEmailById = async (userId: string) => {
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+		select: { email: true },
+	});
+
+	return user?.email;
+};
+
+/**
+ * Generate a random verification code and store in a record tied with userId.
+ *
+ * @param userId - User id.
+ */
+export const createEmailVerificationRecord = async (userId: string) => {
+	// Generate a new verification code
+	const verificationCode = generateVerificationCode();
+
+	// Delete any existing EmailVerification record for the user
+	await prisma.emailVerification.deleteMany({
+		where: { userId },
+	});
+
+	// Create a new EmailVerification record
+	await prisma.emailVerification.create({
+		data: {
+			userId,
+			code: verificationCode,
+			expiration: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
+		},
+	});
+
+	// Send code verification email to user
+	await sendEmailVerificationCode(verificationCode, userId);
+};
+
+/**
+ * @TODO Implement email sending.
+ * @param params
+ */
+const sendEmailVerificationCode = async (verificationCode: number, userId: string) => {
+	const email = await getUserEmailById(userId);
+
+	console.log('send email verification code!', {
+		email,
+		verificationCode,
+	});
 };
 
 /**

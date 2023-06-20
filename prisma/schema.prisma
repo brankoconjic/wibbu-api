@@ -31,6 +31,7 @@ model User {
   id                String             @id @default(uuid()) @db.Uuid
   name              String
   email             String?            @unique
+  emailVerified     Boolean            @default(false)
   password          String?
   dateCreated       DateTime           @default(now())
   role              Role               @default(user)
@@ -38,6 +39,14 @@ model User {
   authProviders     AuthProvider[]
   socialConnections SocialConnection[]
   PopupWidgets      PopupWidget[]
+  EmailVerification EmailVerification?
+}
+
+model EmailVerification {
+  userId     String   @id @unique @db.Uuid
+  code       Int
+  expiration DateTime
+  User       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AuthProvider {
@@ -58,7 +67,7 @@ model SocialConnection {
   expiresAt    DateTime
   createdAt    DateTime             @default(now())
   updatedAt    DateTime             @updatedAt
-  User         User                 @relation(fields: [userId], references: [id])
+  User         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
   PopupWidgets PopupWidget[]
 }
 
@@ -73,7 +82,7 @@ model PopupWidget {
   updatedAt          DateTime           @updatedAt
   PopupWidgetAssets  PopupWidgetAsset[]
   userId             String             @db.Uuid
-  User               User               @relation(fields: [userId], references: [id])
+  User               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PopupWidgetAsset {
@@ -82,5 +91,5 @@ model PopupWidgetAsset {
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   popupWidgetId String      @db.Uuid
-  PopupWidget   PopupWidget @relation(fields: [popupWidgetId], references: [id])
+  PopupWidget   PopupWidget @relation(fields: [popupWidgetId], references: [id], onDelete: Cascade)
 }

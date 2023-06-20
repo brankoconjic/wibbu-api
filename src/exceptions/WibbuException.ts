@@ -1,4 +1,4 @@
-interface WibbuExceptionProp {
+export interface WibbuExceptionProp {
 	code: string;
 	message: string;
 	statusCode: number;

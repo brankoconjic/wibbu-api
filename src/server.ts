@@ -12,10 +12,14 @@ import Fastify from 'fastify';
  */
 import { API_PREFIX, JWT_SECRET, PORT } from '@/config/environment';
 import { handleError } from '@/utils/handleErrors';
+import { FastifyRequest } from 'fastify/types/request';
 import { authProviders } from './config/authProviders';
+import WibbuException from './exceptions/WibbuException';
+import { BAD_REQUEST_EXCEPTION, FORBIDDEN_EXCEPTION } from './exceptions/exceptions';
 import authRoutes from './modules/auth/auth.routes';
 import userRoutes from './modules/user/user.routes';
 import { fastifySchemas } from './utils/buildFastifySchemas';
+import { Role, hasAccess } from './utils/roles';
 
 const logger =
 	process.env.NODE_ENV === 'development'
@@ -63,6 +67,31 @@ const start = async () => {
 				cookieName: 'refreshToken',
 				signed: false, // already signed by jwt
 			},
+		});
+
+		/**
+		 * Decorate server with authorize method.
+		 */
+		server.decorate('authorize', (roles: Role[]) => {
+			return async (request: FastifyRequest) => {
+				// Check access token.
+				// jwtVerify() adds user to request.
+				await request.jwtVerify();
+
+				// Check if user's role matches required roles.
+				if (roles && !hasAccess(request.user.role, roles)) {
+					throw new WibbuException(FORBIDDEN_EXCEPTION);
+				}
+			};
+		});
+
+		/**
+		 * Server decorator that verifies that the request data and query are empty.
+		 */
+		server.decorate('verifyEmptyDataRequest', async (request: FastifyRequest) => {
+			if ((request.body && Object.keys(request.body).length !== 0) || (request.query && Object.keys(request.query).length !== 0)) {
+				throw new WibbuException(BAD_REQUEST_EXCEPTION);
+			}
 		});
 
 		// Add schemas to server.

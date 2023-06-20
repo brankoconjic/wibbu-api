@@ -7,7 +7,6 @@ import { z } from 'zod';
  * Internal dependencies.
  */
 import { apiBaseSchema } from '@/config/schema';
-import { buildJsonSchemas } from 'fastify-zod';
 
 const loginEnum = z.enum(['password', 'oauth']);
 const roleEnum = z.enum(['user', 'admin']);
@@ -17,6 +16,7 @@ export const userSchema = z.object({
 	id: z.string().uuid(),
 	name: z.string(),
 	email: z.string().email().nullish(),
+	emailVerified: z.boolean(),
 	password: z.string().min(8),
 	profileImage: z.string().url().nullish(),
 	role: roleEnum,
@@ -49,6 +49,12 @@ export const JWTPayloadSchema = z.object({
 	iat: z.number(),
 	exp: z.number(),
 });
+
+/**
+ * Verify email schema
+ */
+export const verifyEmailParamsSchema = z.string();
+export const verifyEmailResponseSchema = apiBaseSchema;
 
 /* ---------------------------------- Types --------------------------------- */
 export type UserType = z.infer<typeof userSchema>;
