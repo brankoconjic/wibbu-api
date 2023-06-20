@@ -72,7 +72,7 @@ const authRoutes = async (server: FastifyInstance) => {
 			schema: {
 				body: $ref('registerRequestSchema'),
 				response: {
-					200: $ref('loginRegisterResponseSchema'),
+					201: $ref('loginRegisterResponseSchema'),
 				},
 			},
 		},
