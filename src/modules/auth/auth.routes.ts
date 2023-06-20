@@ -50,16 +50,7 @@ const authRoutes = async (server: FastifyInstance) => {
 	/**
 	 * @route POST /logout - Logout user.
 	 */
-	server.post('/logout', (request: FastifyRequest, reply: FastifyReply) => {
-		if ((request.body && Object.keys(request.body).length !== 0) || (request.query && Object.keys(request.query).length !== 0)) {
-			throw new WibbuException({
-				code: 'BAD_REQUEST',
-				message: 'Bad request',
-				statusCode: 400,
-			});
-		}
-
-		// Clear cookie.
+	server.post('/logout', { preHandler: server.verifyEmptyDataRequest }, (request: FastifyRequest, reply: FastifyReply) => {
 		reply.clearCookie('refreshToken', { path: '/' }).send({ success: true });
 	});
 

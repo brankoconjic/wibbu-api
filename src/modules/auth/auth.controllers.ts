@@ -165,10 +165,6 @@ export const verifyEmailController = async (request: FastifyRequest<{ Params: { 
 	const { code } = request.params;
 	const { id } = request.user;
 
-	if (request.user.emailVerified) {
-		throw new WibbuException(EMAIL_ALREADY_VERIFIED_EXCEPTION);
-	}
-
 	await verifyEmail(parseInt(code), id);
 	reply.send({ success: true });
 };
@@ -178,10 +174,6 @@ export const verifyEmailController = async (request: FastifyRequest<{ Params: { 
  */
 export const resendVerificationController = async (request: FastifyRequest, reply: FastifyReply) => {
 	const { id } = request.user;
-
-	if (request.user.emailVerified) {
-		throw new WibbuException(EMAIL_ALREADY_VERIFIED_EXCEPTION);
-	}
 
 	await createEmailVerificationRecord(id);
 	reply.send({ success: true });

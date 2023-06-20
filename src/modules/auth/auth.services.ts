@@ -10,7 +10,7 @@ import { FastifyRequest } from 'fastify/types/request';
  */
 import prisma from '@/config/database';
 import WibbuException from '@/exceptions/WibbuException';
-import { INVALID_VERIFICATION_CODE, UNAUTHORIZED_EXCEPTION } from '@/exceptions/exceptions';
+import { EMAIL_ALREADY_VERIFIED_EXCEPTION, INVALID_VERIFICATION_CODE, UNAUTHORIZED_EXCEPTION } from '@/exceptions/exceptions';
 import { server } from '@/server';
 import { GoogleIdTokenType, TokenUserDataType } from '@/types/connectionTypes';
 import { generateTokens, generateVerificationCode, getUserIdFromRefreshToken, verifyPassword } from '@/utils/auth';
@@ -209,6 +209,12 @@ export const upsertUserWithToken = async (token: Token, provider: AuthProviderTy
  * @param code - Email verification JWT token containing user ID and token identifier.
  */
 export const verifyEmail = async (code: number, userId: string) => {
+	const verifiedEmail = await isEmailVerified(userId);
+
+	if (verifiedEmail) {
+		throw new WibbuException(EMAIL_ALREADY_VERIFIED_EXCEPTION);
+	}
+
 	// Get the email verification record
 	const emailVerification = await prisma.emailVerification.findUnique({
 		where: { userId },
@@ -237,6 +243,39 @@ export const verifyEmail = async (code: number, userId: string) => {
 		where: { id: userId },
 		data: { emailVerified: true },
 	});
+};
+
+/**
+ * Generate a random verification code and store in a record tied with userId.
+ *
+ * @param userId - User id.
+ */
+export const createEmailVerificationRecord = async (userId: string) => {
+	const verifiedEmail = await isEmailVerified(userId);
+
+	if (verifiedEmail) {
+		throw new WibbuException(EMAIL_ALREADY_VERIFIED_EXCEPTION);
+	}
+
+	const verificationCode = generateVerificationCode();
+	const expiration = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes from now
+
+	// Update or create a new email verification record
+	await prisma.emailVerification.upsert({
+		where: { userId },
+		update: {
+			code: verificationCode,
+			expiration,
+		},
+		create: {
+			userId,
+			code: verificationCode,
+			expiration,
+		},
+	});
+
+	// Send code verification email to user
+	await sendEmailVerificationCode(verificationCode, userId);
 };
 
 /* -------------------------------------------------------------------------- */
@@ -363,30 +402,18 @@ export const getUserEmailById = async (userId: string) => {
 };
 
 /**
- * Generate a random verification code and store in a record tied with userId.
+ * Check if user email is verified.
  *
  * @param userId - User id.
+ * @returns True if email is verified, false if not.
  */
-export const createEmailVerificationRecord = async (userId: string) => {
-	// Generate a new verification code
-	const verificationCode = generateVerificationCode();
-
-	// Delete any existing EmailVerification record for the user
-	await prisma.emailVerification.deleteMany({
-		where: { userId },
+export const isEmailVerified = async (userId: string) => {
+	const user = await prisma.user.findUnique({
+		where: { id: userId },
+		select: { emailVerified: true },
 	});
 
-	// Create a new EmailVerification record
-	await prisma.emailVerification.create({
-		data: {
-			userId,
-			code: verificationCode,
-			expiration: new Date(Date.now() + 30 * 60 * 1000), // 30 minutes from now
-		},
-	});
-
-	// Send code verification email to user
-	await sendEmailVerificationCode(verificationCode, userId);
+	return user && user.emailVerified;
 };
 
 /**
