@@ -29,3 +29,9 @@ export const EMAIL_ALREADY_VERIFIED_EXCEPTION = {
 	message: 'Email already verified',
 	statusCode: 200,
 } as WibbuExceptionProp;
+
+export const USER_NOT_FOUND_EXCEPTION = {
+	code: 'USER_NOT_FOUND',
+	message: 'User not found',
+	statusCode: 404,
+} as WibbuExceptionProp;

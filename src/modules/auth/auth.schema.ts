@@ -44,21 +44,24 @@ export const registerRequestSchema = loginRequestSchema.extend({
 	name: z.string(),
 });
 
-export const JWTPayloadSchema = z.object({
-	sub: z.string().uuid(),
-	iat: z.number(),
-	exp: z.number(),
-});
-
 /**
  * Verify email schema
  */
 export const verifyEmailParamsSchema = z.string();
 export const verifyEmailResponseSchema = apiBaseSchema;
 
+/**
+ * Forgot/reset password schema
+ */
+export const forgotPasswordRequestSchema = z.object({
+	email: z.string().email(),
+});
+
+export const resetPasswordRequestSchema = z.object({ password: z.string().min(8) });
+export const resetPasswordParamsSchema = z.object({ token: z.string() });
+
 /* ---------------------------------- Types --------------------------------- */
 export type UserType = z.infer<typeof userSchema>;
-export type JWTPayloadType = z.infer<typeof JWTPayloadSchema>;
 
 export type LoginType = z.infer<typeof loginEnum>;
 export type RoleType = z.infer<typeof roleEnum>;
@@ -67,3 +70,7 @@ export type LoginRequest = z.infer<typeof loginRequestSchema>;
 export type LoginRegisterResponse = z.infer<typeof loginRegisterResponseSchema>;
 
 export type RegisterRequest = z.infer<typeof registerRequestSchema>;
+
+export type ForgotPasswordRequest = z.infer<typeof forgotPasswordRequestSchema>;
+export type ResetPasswordRequest = z.infer<typeof resetPasswordRequestSchema>;
+export type ResetPasswordParams = z.infer<typeof resetPasswordParamsSchema>;

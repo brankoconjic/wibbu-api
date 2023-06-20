@@ -8,13 +8,21 @@ import { FastifyRequest } from 'fastify/types/request';
  * Internal dependencies.
  */
 import WibbuException from '@/exceptions/WibbuException';
-import { EMAIL_ALREADY_VERIFIED_EXCEPTION } from '@/exceptions/exceptions';
 import { server } from '@/server';
 import { generateTokens } from '@/utils/auth';
 import { isDev, pruneProperties } from '@/utils/misc';
 import { AuthProviderType, User } from '@prisma/client';
-import { LoginRequest, RegisterRequest, authProvidersSchema } from './auth.schema';
-import { createEmailVerificationRecord, login, refreshTokens, register, upsertUserWithToken, verifyEmail } from './auth.services';
+import { ForgotPasswordRequest, LoginRequest, RegisterRequest, ResetPasswordParams, ResetPasswordRequest, authProvidersSchema } from './auth.schema';
+import {
+	createEmailVerificationRecord,
+	forgotPassword,
+	login,
+	refreshTokens,
+	register,
+	resetPassword,
+	upsertUserWithToken,
+	verifyEmail,
+} from './auth.services';
 
 /**
  * Login controller.
@@ -176,5 +184,34 @@ export const resendVerificationController = async (request: FastifyRequest, repl
 	const { id } = request.user;
 
 	await createEmailVerificationRecord(id);
+	reply.send({ success: true });
+};
+
+export const forgotPasswordController = async (
+	request: FastifyRequest<{
+		Body: ForgotPasswordRequest;
+	}>,
+	reply: FastifyReply
+) => {
+	const { email } = request.body;
+	await forgotPassword(email);
+	reply.send({ success: true });
+};
+
+/**
+ * Reset password controller.
+ */
+export const resetPasswordController = async (
+	request: FastifyRequest<{
+		Params: ResetPasswordParams;
+		Body: ResetPasswordRequest;
+	}>,
+	reply: FastifyReply
+) => {
+	const { password } = request.body;
+	const { token } = request.params;
+
+	await resetPassword(token, password);
+
 	reply.send({ success: true });
 };

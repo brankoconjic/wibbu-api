@@ -4,6 +4,7 @@
 import { Token } from '@fastify/oauth2';
 import bcrypt from 'bcrypt';
 import { FastifyRequest } from 'fastify/types/request';
+import { v4 as uuid } from 'uuid';
 
 /**
  * Internal dependencies.
@@ -13,7 +14,8 @@ import WibbuException from '@/exceptions/WibbuException';
 import { EMAIL_ALREADY_VERIFIED_EXCEPTION, INVALID_VERIFICATION_CODE, UNAUTHORIZED_EXCEPTION } from '@/exceptions/exceptions';
 import { server } from '@/server';
 import { GoogleIdTokenType, TokenUserDataType } from '@/types/connectionTypes';
-import { generateTokens, generateVerificationCode, getUserIdFromRefreshToken, verifyPassword } from '@/utils/auth';
+import { generateTokens, generateVerificationCode, getUserIdFromRefreshToken, uuidValidateV4, verifyPassword } from '@/utils/auth';
+import { sendEmailVerificationCode, sendPasswordResetEmail } from '@/utils/email';
 import { pruneProperties } from '@/utils/misc';
 import { AuthProvider, AuthProviderType, User } from '@prisma/client';
 import { LoginRequest, RegisterRequest } from './auth.schema';
@@ -257,7 +259,7 @@ export const createEmailVerificationRecord = async (userId: string) => {
 		throw new WibbuException(EMAIL_ALREADY_VERIFIED_EXCEPTION);
 	}
 
-	const verificationCode = generateVerificationCode();
+	const verificationCode = generateVerificationCode() as number;
 	const expiration = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes from now
 
 	// Update or create a new email verification record
@@ -275,7 +277,74 @@ export const createEmailVerificationRecord = async (userId: string) => {
 	});
 
 	// Send code verification email to user
-	await sendEmailVerificationCode(verificationCode, userId);
+	await sendEmailVerificationCode(userId, verificationCode);
+};
+
+/**
+ * Forgot password service.
+ *
+ * @param email - User email.
+ */
+export const forgotPassword = async (email: string) => {
+	const user = await findUserByEmail(email);
+
+	if (!user) {
+		console.log('User not found!');
+		return;
+	}
+
+	const token = generateVerificationCode('uuid') as string;
+	const expiration = new Date(Date.now() + 30 * 60 * 1000);
+
+	// Create or update password reset record
+	await prisma.passwordResetToken.upsert({
+		where: { userId: user.id },
+		update: { token, expiration },
+		create: {
+			userId: user.id,
+			token,
+			expiration,
+		},
+	});
+
+	// Send email
+	await sendPasswordResetEmail(user.id, token);
+};
+
+/**
+ * Reset password service.
+ */
+export const resetPassword = async (token: string, password: string) => {
+	// Validate token as UUID
+	if (uuidValidateV4(token) === false) {
+		throw new WibbuException(INVALID_VERIFICATION_CODE);
+	}
+
+	const passwordResetToken = await prisma.passwordResetToken.findUnique({
+		where: { token },
+	});
+
+	if (!passwordResetToken) {
+		throw new WibbuException(INVALID_VERIFICATION_CODE);
+	}
+
+	if (passwordResetToken.expiration.getTime() < new Date().getTime()) {
+		throw new WibbuException(INVALID_VERIFICATION_CODE);
+	}
+
+	// Hash password
+	const hashedPassword = await bcrypt.hash(password, 10);
+
+	// Update user password
+	await prisma.user.update({
+		where: { id: passwordResetToken.userId },
+		data: { password: hashedPassword },
+	});
+
+	// Delete password reset token
+	await prisma.passwordResetToken.delete({
+		where: { token },
+	});
 };
 
 /* -------------------------------------------------------------------------- */
@@ -414,19 +483,6 @@ export const isEmailVerified = async (userId: string) => {
 	});
 
 	return user && user.emailVerified;
-};
-
-/**
- * @TODO Implement email sending.
- * @param params
- */
-const sendEmailVerificationCode = async (verificationCode: number, userId: string) => {
-	const email = await getUserEmailById(userId);
-
-	console.log('send email verification code!', {
-		email,
-		verificationCode,
-	});
 };
 
 /**

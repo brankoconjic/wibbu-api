@@ -33,7 +33,7 @@ const logger =
 		  }
 		: false;
 
-export const server = Fastify({ logger });
+export const server = Fastify({ logger: false });
 
 // Handle SIGTERM signal
 process.on('SIGTERM', async () => {

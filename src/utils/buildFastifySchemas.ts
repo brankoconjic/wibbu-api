@@ -7,9 +7,12 @@ import { buildJsonSchemas } from 'fastify-zod';
  * Internal dependencies.
  */
 import {
+	forgotPasswordRequestSchema,
 	loginRegisterResponseSchema,
 	loginRequestSchema,
 	registerRequestSchema,
+	resetPasswordParamsSchema,
+	resetPasswordRequestSchema,
 	verifyEmailParamsSchema,
 	verifyEmailResponseSchema,
 } from '@/modules/auth/auth.schema';
@@ -24,4 +27,7 @@ export const { schemas: fastifySchemas, $ref } = buildJsonSchemas({
 	updateResponseSchema,
 	verifyEmailParamsSchema,
 	verifyEmailResponseSchema,
+	forgotPasswordRequestSchema,
+	resetPasswordParamsSchema,
+	resetPasswordRequestSchema,
 });

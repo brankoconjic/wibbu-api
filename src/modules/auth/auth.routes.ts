@@ -8,15 +8,16 @@ import { FastifyRequest } from 'fastify/types/request';
 /**
  * Internal dependencies.
  */
-import WibbuException from '@/exceptions/WibbuException';
 import { $ref } from '@/utils/buildFastifySchemas';
 import {
+	forgotPasswordController,
 	loginCallbackController,
 	loginConnectController,
 	loginController,
 	refreshController,
 	registerController,
 	resendVerificationController,
+	resetPasswordController,
 	verifyEmailController,
 } from './auth.controllers';
 
@@ -85,6 +86,33 @@ const authRoutes = async (server: FastifyInstance) => {
 	 * @route POST /resend-verify-email - Resend verification email.
 	 */
 	server.post('/resend-verify-email', { preHandler: [server.authorize(), server.verifyEmptyDataRequest] }, resendVerificationController);
+
+	/**
+	 * @route POST /reset-password - Forgot password.
+	 */
+	server.post(
+		'/reset-password',
+		{
+			schema: {
+				body: $ref('forgotPasswordRequestSchema'),
+			},
+		},
+		forgotPasswordController
+	);
+
+	/**
+	 * @route POST /reset-password/:token - Reset password.
+	 */
+	server.post(
+		'/reset-password/:token',
+		{
+			schema: {
+				params: $ref('resetPasswordParamsSchema'),
+				body: $ref('resetPasswordRequestSchema'),
+			},
+		},
+		resetPasswordController
+	);
 };
 
 export default authRoutes;
