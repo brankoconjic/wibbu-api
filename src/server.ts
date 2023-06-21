@@ -33,7 +33,7 @@ const logger =
 		  }
 		: false;
 
-export const server = Fastify({ logger: false });
+export const server = Fastify({ logger });
 
 // Handle SIGTERM signal
 process.on('SIGTERM', async () => {
@@ -101,7 +101,7 @@ const start = async () => {
 
 		// Register routes.
 		server.register(authRoutes, { prefix: `${API_PREFIX}/auth` });
-		server.register(userRoutes, { prefix: `${API_PREFIX}/user` });
+		server.register(userRoutes, { prefix: `${API_PREFIX}/users` });
 
 		// Register OAuth2 auth providers.
 		for (const config of authProviders) {

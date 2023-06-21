@@ -4,7 +4,6 @@
 import { Token } from '@fastify/oauth2';
 import bcrypt from 'bcrypt';
 import { FastifyRequest } from 'fastify/types/request';
-import { v4 as uuid } from 'uuid';
 
 /**
  * Internal dependencies.
@@ -338,7 +337,10 @@ export const resetPassword = async (token: string, password: string) => {
 	// Update user password
 	await prisma.user.update({
 		where: { id: passwordResetToken.userId },
-		data: { password: hashedPassword },
+		data: {
+			password: hashedPassword,
+			emailVerified: true, // Set emailVerified to true, the password reset token was sent to email anyway.
+		},
 	});
 
 	// Delete password reset token

@@ -57,3 +57,26 @@ export const updateUser = async (
 
 	return updatedUser;
 };
+
+/**
+ * Get user details.
+ *
+ * @returns All users.
+ */
+export const findUsers = async (page: number, limit: number) => {
+	const skip = (page - 1) * limit;
+
+	return await prisma.user.findMany({
+		skip: skip,
+		take: limit,
+	});
+};
+
+/**
+ * Get total number of users.
+ *
+ * @returns - Total number of users.
+ */
+export const getUsersCount = async () => {
+	return await prisma.user.count();
+};

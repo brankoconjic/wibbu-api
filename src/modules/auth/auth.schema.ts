@@ -19,6 +19,7 @@ export const userSchema = z.object({
 	emailVerified: z.boolean(),
 	password: z.string().min(8),
 	profileImage: z.string().url().nullish(),
+	dateCreated: z.date(),
 	role: roleEnum,
 });
 
