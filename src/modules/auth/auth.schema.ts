@@ -13,7 +13,7 @@ const roleEnum = z.enum(['user', 'admin']);
 export const authProvidersSchema = z.enum(['google', 'facebook']);
 
 export const userSchema = z.object({
-	id: z.string().uuid(),
+	id: z.string().length(8),
 	name: z.string(),
 	email: z.string().email().nullish(),
 	emailVerified: z.boolean(),

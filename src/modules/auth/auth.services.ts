@@ -4,6 +4,7 @@
 import { Token } from '@fastify/oauth2';
 import bcrypt from 'bcrypt';
 import { FastifyRequest } from 'fastify/types/request';
+import { customAlphabet } from 'nanoid';
 
 /**
  * Internal dependencies.
@@ -18,6 +19,9 @@ import { sendEmailVerificationCode, sendPasswordResetEmail } from '@/utils/email
 import { pruneProperties } from '@/utils/misc';
 import { AuthProvider, AuthProviderType, User } from '@prisma/client';
 import { LoginRequest, RegisterRequest } from './auth.schema';
+
+const nanoidAlphabet = '0123456789abcdefghijklmnopqrstuvwxyz';
+const nanoid = customAlphabet(nanoidAlphabet, 8);
 
 /**
  * Login user with email/password.
@@ -84,6 +88,7 @@ export const register = async (data: RegisterRequest) => {
 
 	user = await prisma.user.create({
 		data: {
+			id: nanoid(8),
 			name: data.name,
 			email: data.email,
 			password: hashedPassword,
@@ -178,6 +183,7 @@ export const upsertUserWithToken = async (token: Token, provider: AuthProviderTy
 		// If we cannot get User through authProvider or email, it means it's a new user so create new User and authProvider from token.
 		existingUser = await prisma.user.create({
 			data: {
+				id: nanoid(9),
 				name: userData.name,
 				email: userData.email,
 				emailVerified: true,

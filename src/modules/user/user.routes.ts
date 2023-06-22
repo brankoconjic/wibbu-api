@@ -2,13 +2,13 @@
  * External dependecies.
  */
 import { FastifyInstance } from 'fastify/types/instance';
+import { FastifyRequest } from 'fastify/types/request';
 
 /**
  * Internal dependencies.
  */
 import { $ref } from '@/utils/buildFastifySchemas';
 import { myDetailsController, updateController, userDetailsController, usersController } from './user.controller';
-import { FastifyRequest } from 'fastify/types/request';
 import { UsersDetailsQuery } from './user.schema';
 
 const userRoutes = async (server: FastifyInstance) => {
@@ -20,6 +20,7 @@ const userRoutes = async (server: FastifyInstance) => {
 		{
 			preHandler: server.authorize(),
 			schema: {
+				body: $ref('updateRequestSchema'),
 				response: {
 					200: $ref('updateResponseSchema'),
 				},

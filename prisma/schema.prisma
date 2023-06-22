@@ -28,7 +28,7 @@ enum SocialConnectionType {
 // --------------------------------  Models ------------------------------- */
 
 model User {
-  id                 String              @id @default(uuid()) @db.Uuid
+  id                 String              @id @unique
   name               String
   email              String?             @unique
   emailVerified      Boolean             @default(false)
@@ -44,14 +44,14 @@ model User {
 }
 
 model EmailVerification {
-  userId     String   @id @unique @db.Uuid
+  userId     String   @id @unique
   code       Int
   expiration DateTime
   User       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PasswordResetToken {
-  userId     String   @id @unique @db.Uuid
+  userId     String   @id @unique
   token      String   @unique @db.Uuid
   expiration DateTime
   User       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -60,7 +60,7 @@ model PasswordResetToken {
 model AuthProvider {
   id        String           @id @unique
   provider  AuthProviderType
-  userId    String           @db.Uuid
+  userId    String
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
   User      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -68,7 +68,7 @@ model AuthProvider {
 
 model SocialConnection {
   id           String               @id @default(uuid()) @db.Uuid
-  userId       String               @db.Uuid
+  userId       String
   provider     SocialConnectionType
   accessToken  String
   refreshToken String
@@ -89,7 +89,7 @@ model PopupWidget {
   createdAt          DateTime           @default(now())
   updatedAt          DateTime           @updatedAt
   PopupWidgetAssets  PopupWidgetAsset[]
-  userId             String             @db.Uuid
+  userId             String
   User               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 

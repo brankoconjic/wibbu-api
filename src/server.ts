@@ -17,6 +17,7 @@ import { authProviders } from './config/authProviders';
 import WibbuException from './exceptions/WibbuException';
 import { BAD_REQUEST_EXCEPTION, FORBIDDEN_EXCEPTION } from './exceptions/exceptions';
 import authRoutes from './modules/auth/auth.routes';
+import dataRoutes from './modules/data/data.routes';
 import userRoutes from './modules/user/user.routes';
 import { fastifySchemas } from './utils/buildFastifySchemas';
 import { Role, hasAccess } from './utils/roles';
@@ -33,7 +34,7 @@ const logger =
 		  }
 		: false;
 
-export const server = Fastify({ logger });
+export const server = Fastify({ logger: false });
 
 // Handle SIGTERM signal
 process.on('SIGTERM', async () => {
@@ -102,6 +103,7 @@ const start = async () => {
 		// Register routes.
 		server.register(authRoutes, { prefix: `${API_PREFIX}/auth` });
 		server.register(userRoutes, { prefix: `${API_PREFIX}/users` });
+		server.register(dataRoutes, { prefix: `${API_PREFIX}/data` });
 
 		// Register OAuth2 auth providers.
 		for (const config of authProviders) {

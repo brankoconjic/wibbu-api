@@ -52,7 +52,7 @@ export const usersDetailsResponseSchema = apiBaseSchema.extend({
 });
 
 export const userDetailsParamsSchema = z.object({
-	id: z.string().uuid(),
+	id: z.string().length(8),
 });
 
 export const userDetailsQuerySchema = z.object({
