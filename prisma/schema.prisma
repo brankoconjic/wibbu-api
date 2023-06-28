@@ -20,9 +20,8 @@ enum AuthProviderType {
   facebook
 }
 
-enum SocialConnectionType {
-  twitch
-  facebook
+enum DataProviderType {
+  instagram
 }
 
 // --------------------------------  Models ------------------------------- */
@@ -39,9 +38,7 @@ model User {
   authProviders      AuthProvider[]
   EmailVerification  EmailVerification?
   PasswordResetToken PasswordResetToken?
-  
-  socialConnections  SocialConnection[]
-  PopupWidgets       PopupWidget[]
+  PopupWidget        PopupWidget[]
 }
 
 model EmailVerification {
@@ -67,38 +64,27 @@ model AuthProvider {
   User      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model SocialConnection {
-  id           String               @id @default(uuid()) @db.Uuid
-  userId       String
-  provider     SocialConnectionType
-  accessToken  String
-  refreshToken String
-  expiresAt    DateTime
-  createdAt    DateTime             @default(now())
-  updatedAt    DateTime             @updatedAt
-  User         User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
-  PopupWidgets PopupWidget[]
-}
-
 model PopupWidget {
-  id                 String             @id @default(uuid()) @db.Uuid
-  name               String?
-  domain             String[]
-  apiKey             String             @unique
-  socialConnectionId String             @db.Uuid
-  SocialConnection   SocialConnection   @relation(fields: [socialConnectionId], references: [id])
-  createdAt          DateTime           @default(now())
-  updatedAt          DateTime           @updatedAt
-  PopupWidgetAssets  PopupWidgetAsset[]
-  userId             String
-  User               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String        @id @unique
+  userId         String
+  dataProviderId String?
+  apiKey         String        @unique
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  User           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain         String[]
+  pages          String[]
+  Options        Json
+  DataProvider   DataProvider?
 }
 
-model PopupWidgetAsset {
-  id            String      @id @default(uuid()) @db.Uuid
-  content       Json
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  popupWidgetId String      @db.Uuid
-  PopupWidget   PopupWidget @relation(fields: [popupWidgetId], references: [id], onDelete: Cascade)
+model DataProvider {
+  popupWidgetId String           @id @unique
+  accessToken   String
+  refreshToken  String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  type          DataProviderType
+  data          Json
+  PopupWidget   PopupWidget      @relation(fields: [popupWidgetId], references: [id], onDelete: Cascade)
 }
