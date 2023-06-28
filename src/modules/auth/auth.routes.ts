@@ -73,7 +73,6 @@ const authRoutes = async (server: FastifyInstance) => {
 
 	/**
 	 * @route POST /refresh-token - Refresh access token.
-	 * @description Refresh tokens using refresh token.
 	 */
 	server.post('/refresh-token', { preHandler: server.verifyEmptyDataRequest }, refreshController);
 

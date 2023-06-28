@@ -8,6 +8,7 @@ import { FastifyRequest } from 'fastify/types/request';
  * Internal dependencies.
  */
 import WibbuException from '@/exceptions/WibbuException';
+import { INVALID_PROVIDER_EXCEPTION } from '@/exceptions/exceptions';
 import { server } from '@/server';
 import { generateTokens } from '@/utils/auth';
 import { isDev, pruneProperties } from '@/utils/misc';
@@ -108,11 +109,7 @@ export const loginConnectController = async (request: FastifyRequest, reply: Fas
 	const parsed = authProvidersSchema.safeParse(provider);
 
 	if (!parsed.success) {
-		throw new WibbuException({
-			code: 'BAD_REQUEST',
-			message: 'Invalid provider',
-			statusCode: 400,
-		});
+		throw new WibbuException(INVALID_PROVIDER_EXCEPTION);
 	}
 
 	// @ts-ignore
@@ -130,11 +127,7 @@ export const loginCallbackController = async (request: FastifyRequest, reply: Fa
 	const parsed = authProvidersSchema.safeParse(provider);
 
 	if (!parsed.success) {
-		throw new WibbuException({
-			code: 'BAD_REQUEST',
-			message: 'Invalid provider',
-			statusCode: 400,
-		});
+		throw new WibbuException(INVALID_PROVIDER_EXCEPTION);
 	}
 
 	const oauthToken = await server[provider].getAccessTokenFromAuthorizationCodeFlow(request);

@@ -37,10 +37,11 @@ model User {
   role               Role                @default(user)
   profileImage       String?
   authProviders      AuthProvider[]
-  socialConnections  SocialConnection[]
-  PopupWidgets       PopupWidget[]
   EmailVerification  EmailVerification?
   PasswordResetToken PasswordResetToken?
+  
+  socialConnections  SocialConnection[]
+  PopupWidgets       PopupWidget[]
 }
 
 model EmailVerification {

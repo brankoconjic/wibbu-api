@@ -6,6 +6,8 @@ import helmet from '@fastify/helmet';
 import jwt from '@fastify/jwt';
 import oauth2 from '@fastify/oauth2';
 import Fastify from 'fastify';
+import fs from 'fs';
+import path from 'path';
 
 /**
  * Internal dependencies.
@@ -14,6 +16,7 @@ import { API_PREFIX, JWT_SECRET, PORT } from '@/config/environment';
 import { handleError } from '@/utils/handleErrors';
 import { FastifyRequest } from 'fastify/types/request';
 import { authProviders } from './config/authProviders';
+import { dataProviders } from './config/dataProviders';
 import WibbuException from './exceptions/WibbuException';
 import { BAD_REQUEST_EXCEPTION, FORBIDDEN_EXCEPTION } from './exceptions/exceptions';
 import authRoutes from './modules/auth/auth.routes';
@@ -34,7 +37,13 @@ const logger =
 		  }
 		: false;
 
-export const server = Fastify({ logger: false });
+export const server = Fastify({
+	logger: false,
+	https: {
+		key: fs.readFileSync(path.join(__dirname, '/dev-cert/key.pem')),
+		cert: fs.readFileSync(path.join(__dirname, '/dev-cert/cert.pem')),
+	},
+});
 
 // Handle SIGTERM signal
 process.on('SIGTERM', async () => {
@@ -107,6 +116,11 @@ const start = async () => {
 
 		// Register OAuth2 auth providers.
 		for (const config of authProviders) {
+			server.register(oauth2, config);
+		}
+
+		// Register OAuth2 data providers.
+		for (const config of dataProviders) {
 			server.register(oauth2, config);
 		}
 

@@ -16,6 +16,7 @@ declare module 'fastify' {
 		verifyEmptyDataRequest: (request: FastifyRequest, reply: FastifyReply) => void;
 		google: OAuth2Namespace;
 		facebook: OAuth2Namespace;
+		instagram: any;
 	}
 }
 

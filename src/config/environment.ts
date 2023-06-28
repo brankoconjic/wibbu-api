@@ -9,19 +9,18 @@ if (!process.env.DATABASE_URL || !process.env.JWT_SECRET) {
 }
 
 export const API_VERSION = 'v1' as const;
-
-export const WIBBU_DOMAIN = 'https://socialsnap.com' as const;
-export const API_BASE = 'http://localhost:3300' as const;
+export const API_BASE = process.env.API_BASE || ('https://api.wibbu.com' as const);
 export const API_PREFIX = `${API_VERSION}` as const;
+
+export const PORT = process.env.PORT !== undefined ? parseInt(process.env.PORT, 10) : 3300;
 
 export const DATABASE_URL = process.env.DATABASE_URL;
 export const JWT_SECRET = process.env.JWT_SECRET;
-export const CSRF_SECRET = process.env.CSRF_SECRET;
-export const PORT = process.env.PORT !== undefined ? parseInt(process.env.PORT, 10) : 3300;
 
 // Auth providers - OAuth2
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-
 export const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
 export const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET;
+export const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID;
+export const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET;

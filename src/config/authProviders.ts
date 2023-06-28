@@ -6,7 +6,7 @@ import oauth2, { FastifyOAuth2Options } from '@fastify/oauth2';
 /**
  * Internal dependencies.
  */
-import { API_BASE, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, FACEBOOK_APP_ID, FACEBOOK_APP_SECRET } from './environment';
+import { API_BASE, API_PREFIX, FACEBOOK_APP_ID, FACEBOOK_APP_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET } from './environment';
 
 const googleConfig: FastifyOAuth2Options = {
 	name: 'google',
@@ -18,7 +18,7 @@ const googleConfig: FastifyOAuth2Options = {
 			secret: GOOGLE_CLIENT_SECRET!,
 		},
 	},
-	callbackUri: `${API_BASE}/v1/auth/callback/google`,
+	callbackUri: `${API_BASE}/${API_PREFIX}/auth/callback/google`,
 	callbackUriParams: {
 		access_type: 'offline', // will tell Google to send a refreshToken too
 	},
@@ -34,7 +34,7 @@ const facebookConfig: FastifyOAuth2Options = {
 			secret: FACEBOOK_APP_SECRET!,
 		},
 	},
-	callbackUri: 'http://localhost:3300/v1/auth/callback/facebook',
+	callbackUri: `${API_BASE}/${API_PREFIX}/auth/callback/facebook`,
 	callbackUriParams: {
 		access_type: 'offline', // will tell Facebook to send a refresh token
 	},

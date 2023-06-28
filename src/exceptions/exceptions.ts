@@ -35,3 +35,9 @@ export const USER_NOT_FOUND_EXCEPTION = {
 	message: 'User not found',
 	statusCode: 404,
 } as WibbuExceptionProp;
+
+export const INVALID_PROVIDER_EXCEPTION = {
+	code: 'BAD_REQUEST',
+	message: 'Invalid provider',
+	statusCode: 400,
+} as WibbuExceptionProp;
