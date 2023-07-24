@@ -9,5 +9,5 @@ import { z } from 'zod';
 
 // Specific API responses will extend this schema.
 export const apiBaseSchema = z.object({
-	success: z.boolean(),
+  success: z.boolean(),
 });

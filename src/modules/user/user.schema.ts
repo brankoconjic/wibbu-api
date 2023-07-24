@@ -14,50 +14,50 @@ import { userSchema } from '../auth/auth.schema';
  */
 // export const updateRequestSchema = userSchema.omit({ id: true });
 export const updateRequestSchema = z
-	.object({
-		email: z.string().email().optional(),
-		name: z.string().optional(),
-		password: z.string().min(8).optional(),
-	})
-	.strict();
+  .object({
+    email: z.string().email().optional(),
+    name: z.string().optional(),
+    password: z.string().min(8).optional(),
+  })
+  .strict();
 
 /**
  * Update user response
  */
 export const updateResponseSchema = apiBaseSchema.extend({
-	data: z.object({
-		user: userSchema.omit({ password: true }),
-	}),
+  data: z.object({
+    user: userSchema.omit({ password: true }),
+  }),
 });
 
 /**
  * User details response
  */
 export const userDetailsResponseSchema = apiBaseSchema.extend({
-	data: z.object({
-		user: userSchema.omit({ password: true }),
-	}),
+  data: z.object({
+    user: userSchema.omit({ password: true }),
+  }),
 });
 
 export const usersDetailsResponseSchema = apiBaseSchema.extend({
-	data: z.object({
-		pagination: z.object({
-			total: z.number(),
-			currentPage: z.number(),
-			totalPages: z.number(),
-			perPage: z.number(),
-		}),
-		users: z.array(userSchema.omit({ password: true })),
-	}),
+  data: z.object({
+    pagination: z.object({
+      total: z.number(),
+      currentPage: z.number(),
+      totalPages: z.number(),
+      perPage: z.number(),
+    }),
+    users: z.array(userSchema.omit({ password: true })),
+  }),
 });
 
 export const userDetailsParamsSchema = z.object({
-	id: z.string().length(8),
+  id: z.string().length(8),
 });
 
 export const userDetailsQuerySchema = z.object({
-	page: z.number().min(1).optional(),
-	limit: z.number().min(1).max(100).optional(),
+  page: z.number().min(1).optional(),
+  limit: z.number().min(1).max(100).optional(),
 });
 
 /* ---------------------------------- Types --------------------------------- */

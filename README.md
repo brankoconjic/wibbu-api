@@ -1,2 +1,3 @@
 # wibbu-api
- Fastify API with Zod, Prisma and JWT.
+
+Fastify API with Zod, Prisma and JWT.

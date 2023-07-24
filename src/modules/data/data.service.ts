@@ -12,11 +12,11 @@ import puppeteer from 'puppeteer';
  * @param username - Pinterest username.
  */
 export const getPinterestData = async (username: string) => {
-	let data: any = null;
+  let data: any = null;
 
-	data = await scrapePinterestData(username);
+  data = await scrapePinterestData(username);
 
-	return data;
+  return data;
 };
 
 /**
@@ -25,33 +25,35 @@ export const getPinterestData = async (username: string) => {
  * @param username - Pinterest username.
  */
 export const scrapePinterestData = async (username: string) => {
-	console.log(`https://www.pinterest.com/${username}`);
+  console.log(`https://www.pinterest.com/${username}`);
 
-	// Launch Puppeteer and go to the Pinterest.
-	const browser = await puppeteer.launch({ headless: 'new' });
-	const page = await browser.newPage();
-	await page.goto(`https://www.pinterest.com/${username}/_created/`);
+  // Launch Puppeteer and go to the Pinterest.
+  const browser = await puppeteer.launch({ headless: 'new' });
+  const page = await browser.newPage();
+  await page.goto(`https://www.pinterest.com/${username}/_created/`);
 
-	page.on('console', (msg) => console.log('PAGE LOG:', msg.text()));
+  page.on('console', (msg) => console.log('PAGE LOG:', msg.text()));
 
-	await page.screenshot({ path: 'example.png' });
+  await page.screenshot({ path: 'example.png' });
 
-	// Parse the page content
-	const data = await page.evaluate(() => {
-		// const posts: any = [];
+  // Parse the page content
+  const data = await page.evaluate(() => {
+    // const posts: any = [];
 
-		const followersCountEl = document.querySelector('div[data-test-id="profile-followers-count"] > div > span');
-		const followersCount = followersCountEl ? followersCountEl.textContent : null;
-		console.log('Followers: ', followersCount);
+    const followersCountEl = document.querySelector(
+      'div[data-test-id="profile-followers-count"] > div > span'
+    );
+    const followersCount = followersCountEl ? followersCountEl.textContent : null;
+    console.log('Followers: ', followersCount);
 
-		return followersCount;
-	});
+    return followersCount;
+  });
 
-	// Close the browser
-	await browser.close();
+  // Close the browser
+  await browser.close();
 
-	// Finally, return the data
-	return data;
+  // Finally, return the data
+  return data;
 };
 
 /**
@@ -61,19 +63,19 @@ export const scrapePinterestData = async (username: string) => {
  * @returns - Instagram data.
  */
 export const getInstagramData = async (accessToken: string, limit: number = 6) => {
-	const requestUrl = `https://graph.instagram.com/me/media?fields=id,media_type,media_url,permalink,caption&access_token=${accessToken}&limit=${limit}`;
-	const response = await fetch(requestUrl);
-	const data = await response.json();
+  const requestUrl = `https://graph.instagram.com/me/media?fields=id,media_type,media_url,permalink,caption&access_token=${accessToken}&limit=${limit}`;
+  const response = await fetch(requestUrl);
+  const data = await response.json();
 
-	return data;
+  return data;
 };
 
 /* --------------------------------- Helpers -------------------------------- */
 type InstagramLongTokenResponse = {
-	access_token?: string;
-	token_type?: 'bearer' | string;
-	expires_in?: number;
-	error?: string;
+  access_token?: string;
+  token_type?: 'bearer' | string;
+  expires_in?: number;
+  error?: string;
 };
 
 /**
@@ -83,17 +85,17 @@ type InstagramLongTokenResponse = {
  * @returns Long-lived Instagram token that lasts approximately 60 days.
  */
 export const getLongInstagramToken = async (accessToken: string) => {
-	const requestUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_APP_SECRET}&access_token=${accessToken}`;
-	const response = await fetch(requestUrl);
+  const requestUrl = `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_APP_SECRET}&access_token=${accessToken}`;
+  const response = await fetch(requestUrl);
 
-	const data: InstagramLongTokenResponse = await response.json();
+  const data: InstagramLongTokenResponse = await response.json();
 
-	// Failed to get long-lived token.
-	if (data.error) {
-		throw new WibbuException(BAD_REQUEST_EXCEPTION);
-	}
+  // Failed to get long-lived token.
+  if (data.error) {
+    throw new WibbuException(BAD_REQUEST_EXCEPTION);
+  }
 
-	return data;
+  return data;
 };
 
 /**
@@ -103,15 +105,15 @@ export const getLongInstagramToken = async (accessToken: string) => {
  * @returns Refreshed long-lived Instagram token that lasts approximately 60 days.
  */
 export const refreshLongInstagramToken = async (accessToken: string) => {
-	const requestUrl = `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${accessToken}`;
-	const response = await fetch(requestUrl);
+  const requestUrl = `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${accessToken}`;
+  const response = await fetch(requestUrl);
 
-	const data: InstagramLongTokenResponse = await response.json();
+  const data: InstagramLongTokenResponse = await response.json();
 
-	// Failed to refresh long-lived token.
-	if (data.error) {
-		throw new WibbuException(BAD_REQUEST_EXCEPTION);
-	}
+  // Failed to refresh long-lived token.
+  if (data.error) {
+    throw new WibbuException(BAD_REQUEST_EXCEPTION);
+  }
 
-	return data;
+  return data;
 };

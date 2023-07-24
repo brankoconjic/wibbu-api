@@ -4,8 +4,10 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 if (!process.env.DATABASE_URL || !process.env.JWT_SECRET) {
-	console.error('Missing environment variables. Set variable in .env file and restart the application.');
-	process.exit(1);
+  console.error(
+    'Missing environment variables. Set variable in .env file and restart the application.'
+  );
+  process.exit(1);
 }
 
 export const API_VERSION = 'v1' as const;

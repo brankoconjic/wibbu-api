@@ -1,6 +1,6 @@
 export const ROLES = {
-	admin: 'admin',
-	user: 'user',
+  admin: 'admin',
+  user: 'user',
 } as const;
 
 export type Role = (typeof ROLES)[keyof typeof ROLES];
@@ -13,9 +13,9 @@ export type Role = (typeof ROLES)[keyof typeof ROLES];
  * @returns True if user has access, false otherwise.
  */
 export function hasAccess(userRole: Role, requiredRoles?: Role[]) {
-	if (!requiredRoles) {
-		return true;
-	}
+  if (!requiredRoles) {
+    return true;
+  }
 
-	return requiredRoles.includes(userRole);
+  return requiredRoles.includes(userRole);
 }

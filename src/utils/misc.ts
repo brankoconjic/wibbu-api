@@ -16,13 +16,13 @@ export const isDev = (): boolean => process.env.NODE_ENV === 'development';
  */
 
 export const pruneProperties = <T>(data: T, keysToExclude: (keyof T)[]): Partial<T> => {
-	const prunedData = {} as Partial<T>;
+  const prunedData = {} as Partial<T>;
 
-	for (const key in data) {
-		if (!keysToExclude.includes(key as keyof T)) {
-			prunedData[key as keyof T] = data[key as keyof typeof data];
-		}
-	}
+  for (const key in data) {
+    if (!keysToExclude.includes(key as keyof T)) {
+      prunedData[key as keyof T] = data[key as keyof typeof data];
+    }
+  }
 
-	return prunedData;
+  return prunedData;
 };

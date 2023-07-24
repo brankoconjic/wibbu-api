@@ -12,13 +12,13 @@ import { isDev } from './misc';
 const DEFAULT_ERROR_MESSAGE = 'An unexpected error occurred.' as const;
 
 type ErrorResponseType = {
-	message: string;
-	code: string | 'API_ERROR' | 'DUPLICATE_ERROR';
+  message: string;
+  code: string | 'API_ERROR' | 'DUPLICATE_ERROR';
 };
 
 type ReturnErrorType = {
-	success: boolean;
-	error: ErrorResponseType;
+  success: boolean;
+  error: ErrorResponseType;
 };
 
 /**
@@ -29,39 +29,45 @@ type ReturnErrorType = {
  * @param reply - The reply object.
  * @returns The error response.
  */
-export const handleError = (error: Prisma.PrismaClientKnownRequestError | FastifyError | Error, request: FastifyRequest, reply: FastifyReply) => {
-	let errObj: ReturnErrorType = {
-		// @ts-ignore
-		success: error?.statusCode ? (error.statusCode === 200 ? true : false) : false,
-		error: {
-			message: DEFAULT_ERROR_MESSAGE,
-			code: 'API_ERROR',
-		},
-	};
+export const handleError = (
+  error: Prisma.PrismaClientKnownRequestError | FastifyError | Error,
+  request: FastifyRequest,
+  reply: FastifyReply
+) => {
+  let errObj: ReturnErrorType = {
+    // @ts-ignore
+    success: error?.statusCode ? (error.statusCode === 200 ? true : false) : false,
+    error: {
+      message: DEFAULT_ERROR_MESSAGE,
+      code: 'API_ERROR',
+    },
+  };
 
-	// Handle duplicate record error
-	if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-		errObj.error = {
-			message: isDev() ? `Record already exists. Please use a different value for {${error?.meta?.target}}.` : DEFAULT_ERROR_MESSAGE,
-			code: 'DUPLICATE_ERROR',
-		};
+  // Handle duplicate record error
+  if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+    errObj.error = {
+      message: isDev()
+        ? `Record already exists. Please use a different value for {${error?.meta?.target}}.`
+        : DEFAULT_ERROR_MESSAGE,
+      code: 'DUPLICATE_ERROR',
+    };
 
-		return reply.status(409).send(errObj);
-	}
+    return reply.status(409).send(errObj);
+  }
 
-	// Handle other errors
-	const fastifyError = error as FastifyError;
+  // Handle other errors
+  const fastifyError = error as FastifyError;
 
-	if (fastifyError instanceof Error) {
-		const statusCode = fastifyError?.statusCode ? fastifyError.statusCode : 500;
-		errObj.error = {
-			message: isDev() ? fastifyError.message : DEFAULT_ERROR_MESSAGE,
-			code: isDev() ? fastifyError.code : DEFAULT_ERROR_MESSAGE,
-		};
+  if (fastifyError instanceof Error) {
+    const statusCode = fastifyError?.statusCode ? fastifyError.statusCode : 500;
+    errObj.error = {
+      message: isDev() ? fastifyError.message : DEFAULT_ERROR_MESSAGE,
+      code: isDev() ? fastifyError.code : DEFAULT_ERROR_MESSAGE,
+    };
 
-		return reply.status(statusCode).send(errObj);
-	}
+    return reply.status(statusCode).send(errObj);
+  }
 
-	// Send error response
-	return reply.status(500).send(errObj);
+  // Send error response
+  return reply.status(500).send(errObj);
 };

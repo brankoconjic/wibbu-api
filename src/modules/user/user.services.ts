@@ -19,43 +19,43 @@ import { UpdateRequest, updateRequestSchema } from './user.schema';
  * @returns Updated user.
  */
 export const updateUser = async (
-	request: FastifyRequest<{
-		Body: UpdateRequest;
-	}>
+  request: FastifyRequest<{
+    Body: UpdateRequest;
+  }>
 ) => {
-	const parsedBody = updateRequestSchema.safeParse(request.body);
+  const parsedBody = updateRequestSchema.safeParse(request.body);
 
-	if (!parsedBody.success) {
-		throw new WibbuException(BAD_REQUEST_EXCEPTION);
-	}
+  if (!parsedBody.success) {
+    throw new WibbuException(BAD_REQUEST_EXCEPTION);
+  }
 
-	let data = {
-		...parsedBody.data,
-	};
+  let data = {
+    ...parsedBody.data,
+  };
 
-	const { id } = request.user;
+  const { id } = request.user;
 
-	const requestPassword = parsedBody.data.password;
-	let hashedPassword = null;
+  const requestPassword = parsedBody.data.password;
+  let hashedPassword = null;
 
-	if (requestPassword) {
-		hashedPassword = await bcrypt.hash(requestPassword, 10);
+  if (requestPassword) {
+    hashedPassword = await bcrypt.hash(requestPassword, 10);
 
-		data = {
-			...parsedBody.data,
-			password: hashedPassword,
-		};
-	}
+    data = {
+      ...parsedBody.data,
+      password: hashedPassword,
+    };
+  }
 
-	// Update the user in the database.
-	const updatedUser = prisma.user.update({
-		where: {
-			id,
-		},
-		data,
-	});
+  // Update the user in the database.
+  const updatedUser = prisma.user.update({
+    where: {
+      id,
+    },
+    data,
+  });
 
-	return updatedUser;
+  return updatedUser;
 };
 
 /**
@@ -64,12 +64,12 @@ export const updateUser = async (
  * @returns All users.
  */
 export const findUsers = async (page: number, limit: number) => {
-	const skip = (page - 1) * limit;
+  const skip = (page - 1) * limit;
 
-	return await prisma.user.findMany({
-		skip: skip,
-		take: limit,
-	});
+  return await prisma.user.findMany({
+    skip: skip,
+    take: limit,
+  });
 };
 
 /**
@@ -78,5 +78,5 @@ export const findUsers = async (page: number, limit: number) => {
  * @returns - Total number of users.
  */
 export const getUsersCount = async () => {
-	return await prisma.user.count();
+  return await prisma.user.count();
 };

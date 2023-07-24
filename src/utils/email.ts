@@ -5,12 +5,12 @@ import { getUserEmailById } from '@/modules/auth/auth.services';
  * @param params
  */
 export const sendEmailVerificationCode = async (userId: string, verificationCode: number) => {
-	const email = await getUserEmailById(userId);
+  const email = await getUserEmailById(userId);
 
-	console.log('send email verification code!', {
-		email,
-		verificationCode,
-	});
+  console.log('send email verification code!', {
+    email,
+    verificationCode,
+  });
 };
 
 /**
@@ -20,9 +20,9 @@ export const sendEmailVerificationCode = async (userId: string, verificationCode
  * @param userId - User ID.
  */
 export const sendPasswordResetEmail = async (userId: string, token: string) => {
-	const email = await getUserEmailById(userId);
+  const email = await getUserEmailById(userId);
 
-	console.log('send password reset code!', {
-		email,
-	});
+  console.log('send password reset code!', {
+    email,
+  });
 };

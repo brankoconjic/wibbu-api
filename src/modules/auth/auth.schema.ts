@@ -13,36 +13,36 @@ const roleEnum = z.enum(['user', 'admin']);
 export const authProvidersSchema = z.enum(['google', 'facebook']);
 
 export const userSchema = z.object({
-	id: z.string().length(8),
-	name: z.string(),
-	email: z.string().email().nullish(),
-	emailVerified: z.boolean(),
-	password: z.string().min(8),
-	profileImage: z.string().url().nullish(),
-	dateCreated: z.date(),
-	role: roleEnum,
+  id: z.string().length(8),
+  name: z.string(),
+  email: z.string().email().nullish(),
+  emailVerified: z.boolean(),
+  password: z.string().min(8),
+  profileImage: z.string().url().nullish(),
+  dateCreated: z.date(),
+  role: roleEnum,
 });
 
 /**
  * Login request
  */
 export const loginRequestSchema = z.object({
-	email: z.string().email(),
-	password: z.string().min(8),
+  email: z.string().email(),
+  password: z.string().min(8),
 });
 
 export const loginRegisterResponseSchema = apiBaseSchema.extend({
-	data: z.object({
-		accessToken: z.string(),
-		user: userSchema.omit({ password: true }),
-	}),
+  data: z.object({
+    accessToken: z.string(),
+    user: userSchema.omit({ password: true }),
+  }),
 });
 
 /**
  * Register request
  */
 export const registerRequestSchema = loginRequestSchema.extend({
-	name: z.string(),
+  name: z.string(),
 });
 
 /**
@@ -55,7 +55,7 @@ export const verifyEmailResponseSchema = apiBaseSchema;
  * Forgot/reset password schema
  */
 export const forgotPasswordRequestSchema = z.object({
-	email: z.string().email(),
+  email: z.string().email(),
 });
 
 export const resetPasswordRequestSchema = z.object({ password: z.string().min(8) });
